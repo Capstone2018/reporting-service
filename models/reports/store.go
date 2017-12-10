@@ -15,7 +15,7 @@ type Store interface {
 	GetByID(id int64) (*Report, error)
 
 	// GetByUrl returns the list of Reports with a given url
-	GetByUrl(url string) ([]*Report, error)
+	GetByURL(url string) ([]*Report, error)
 
 	// GetByHost returns the list of Reports with a given host
 	GetByHost(host string) ([]*Report, error)
