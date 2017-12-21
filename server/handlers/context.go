@@ -1,6 +1,6 @@
 package handlers
 
-import "github.com/Capstone2018/reporting-service/models/reports"
+import "github.com/Capstone2018/reporting-service/server/models/reports"
 
 // Context holds global context values for the handlers
 type Context struct {

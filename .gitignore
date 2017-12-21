@@ -1,3 +1,6 @@
+# ignore tls and binary
+tls
+
 # Binaries for programs and plugins
 *.exe
 *.dll

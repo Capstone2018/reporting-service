@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Capstone2018/reporting-service/models/reports"
+	"github.com/Capstone2018/reporting-service/server/models/reports"
 )
 
 // ReportsHandler handles the /reports resource
@@ -19,8 +19,13 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request) {
 		host := strings.ToLower(r.FormValue("host"))
 		url := strings.ToLower(r.FormValue("url"))
 		if len(host) == 0 && len(url) == 0 {
-			http.Error(w, "missing query parameter", http.StatusBadRequest)
-			return
+			// return all the reports in the database
+			reports, err := ctx.ReportsStore.GetAll()
+			if err != nil {
+				http.Error(w, fmt.Sprintf("error getting all reports: %v", err), http.StatusInternalServerError)
+				return
+			}
+			respond(w, reports, http.StatusOK)
 		}
 		if len(host) != 0 && len(url) != 0 {
 			http.Error(w, "can't provide both url and host query", http.StatusBadRequest)
@@ -68,6 +73,7 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request) {
 func (ctx *Context) ReportIDHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: ensure authentication
 
+	// TODO: decide if a person can edit their report..
 	if r.Method != "GET" {
 		http.Error(w, "method must be GET", http.StatusBadRequest)
 		return

@@ -6,7 +6,7 @@ cd ../server
 GOOS=linux go build
 
 echo "building reporting service docker image"
-docker build -t aethanol/reporting-service
+docker build -t aethanol/reporting-service .
 
 echo "cleaning up reporting service.."
 go clean

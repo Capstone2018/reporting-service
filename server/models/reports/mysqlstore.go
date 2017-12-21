@@ -11,14 +11,18 @@ const sqlInsertReport = `insert into reports(description, createdAt, websiteID) 
 
 const sqlInsertWebsite = `insert into websites(url, host) values(?, ?)`
 
-const sqlSelectID = `select id, description, createdAt, websiteID, url, host 
-from reports inner join websites on (websites.id=reports.websiteID) where id=?`
+const sqlSelectID = `select reports.id, description, createdAt, websiteID, url, host 
+from reports inner join websites on (websites.id=reports.websiteID) where reports.id=?`
 
-const sqlSelectURL = `select id, description, createdAt, websiteID, url, host 
+const sqlSelectAll = `select reports.id, description, createdAt, websiteID, url, host 
+from reports inner join websites on (websites.id=reports.websiteID)
+order by id, createdAt`
+
+const sqlSelectURL = `select reports.id, description, createdAt, websiteID, url, host 
 from reports inner join websites on (websites.id=reports.websiteID) where url=?
 order by id, createdAt`
 
-const sqlSelectHost = `select id, description, createdAt, websiteID, url, host 
+const sqlSelectHost = `select reports.id, description, createdAt, websiteID, url, host 
 from reports inner join websites on (websites.id=reports.websiteID) where host=?
 order by id, createdAt`
 
@@ -114,6 +118,16 @@ func (s *MySQLStore) GetByID(id int64) (*Report, error) {
 	}
 
 	return reports[0], nil
+}
+
+// GetAll returns all of the reports in the database
+func (s *MySQLStore) GetAll() ([]*Report, error) {
+	rows, err := s.db.Query(sqlSelectAll)
+	if err != nil {
+		return nil, fmt.Errorf("error selecting reports: %v", err)
+	}
+
+	return scanReports(rows)
 }
 
 // GetByURL returns the list of Reports with a given url

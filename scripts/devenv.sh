@@ -5,6 +5,8 @@
 # command to source this into your current shell:
 #   source devenv.sh
 
+export NETWORK_NAME=crapstone
+
 # docker container image name for reporting service
 export REPORTING_SERVICE_IMAGE=aethanol/reporting-service
 
@@ -16,3 +18,5 @@ export MYSQL_DATABASE=reporting
 
 # random MySQL root password
 export MYSQL_ROOT_PASSWORD=$(openssl rand -base64 18)
+
+export MYSQL_ADDR=devmysql:3306

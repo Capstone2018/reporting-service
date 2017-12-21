@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # run the server in dev environment
 
-netname=crapstone
+source ./devenv.sh
+
+netname=$NETWORK_NAME
 if [ -z "$(docker network ls --filter name=$netname --quiet)" ]; then
     docker network create $netname
 fi
@@ -22,6 +24,7 @@ fi
 docker run -d \
 --name devmysql \
 --network $netname \
+-p 3306:3306 \
 -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
 -e MYSQL_DATABASE=$MYSQL_DATABASE \
 $REPORTING_MYSQL_IMAGE --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
@@ -34,6 +37,7 @@ docker run -d \
 -e ADDR=:4040 \
 -e TLSKEY=/tls/privkey.pem \
 -e TLSCERT=/tls/fullchain.pem \
+-e MYSQL_ADDR=$MYSQL_ADDR \
 -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
 -e MYSQL_DATABASE=$MYSQL_DATABASE \
 $REPORTING_SERVICE_IMAGE .

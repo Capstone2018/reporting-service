@@ -1,4 +1,4 @@
 FROM scratch
-COPY reporting-service reporting-service
+COPY server server
 EXPOSE 443
-ENTRYPOINT ["/reporting-service"]
+ENTRYPOINT ["/server"]
