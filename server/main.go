@@ -9,6 +9,8 @@ import (
 
 	"github.com/Capstone2018/reporting-service/server/handlers"
 	"github.com/Capstone2018/reporting-service/server/models/reports"
+	"github.com/Capstone2018/reporting-service/server/sessions"
+	"github.com/go-redis/redis"
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -65,11 +67,21 @@ func main() {
 	addr := getenv("ADDR", ":443")
 	tlsKey := getenv("TLSKEY", "")
 	tlsCert := getenv("TLSCERT", "")
+	redisAddr := getenv("REDISADDR", "localhost:6379")
+	sessionsSigKey := getenv("SESSIONKEY", "")
+	// connect to the sql DB and create a new store
 	db, _ := connectToMySQL()
 	// remember to close the database
 	defer db.Close()
 	mysqlStore := reports.NewMySQLStore(db)
-	hctx := handlers.NewHandlerContext(mysqlStore)
+
+	// connect to redis, default timeout for sessions to be 1 hour
+	// TODO: determine how long a user should be signed in for
+	client := redis.NewClient(&redis.Options{Addr: redisAddr})
+	redisStore := sessions.NewRedisStore(client, time.Hour)
+
+	// create a handler context
+	hctx := handlers.NewHandlerContext(mysqlStore, redisStore, sessionsSigKey)
 
 	apiMux := http.NewServeMux()
 	apiMux.HandleFunc(apiRoot+"reports", hctx.ReportsHandler)
