@@ -48,7 +48,7 @@ func NewSessionID(signingKey string) (SessionID, error) {
 	if _, err := rand.Read(buf[0:idLength]); err != nil {
 		return InvalidSessionID, err
 	}
-	
+
 	// generate hmac from id bytes in the remaining buffer
 	mac := genMac(buf[0:idLength], signingKey)
 	copy(buf[idLength:], mac)
@@ -62,15 +62,27 @@ func NewSessionID(signingKey string) (SessionID, error) {
 //using the `signingKey` as the HMAC signing key
 //and returns an error if invalid, or a SessionID if valid
 func ValidateID(id string, signingKey string) (SessionID, error) {
+	//validate the `id` parameter using the provided `signingKey`.
+	// base64 decode the id to a byte slice
+	buf, err := base64.URLEncoding.DecodeString(id)
+	if err != nil {
+		return InvalidSessionID, err
+	}
+	//if the byte slice length is < signedLength
+	//it must be invalid, so return InvalidSessionID
+	//and ErrInvalidID
+	if len(buf) < signedLength {
+		return InvalidSessionID, ErrInvalidID
+	}
+	// HMAC hash the id from the byte slice
+	mac := genMac(buf[0:idLength], signingKey)
+	// compare the hmac to the one stored in the remaining bytes
+	if !hmac.Equal(mac, buf[idLength:]) {
+		return InvalidSessionID, ErrInvalidID
+	}
+	// session is valid so return it
+	return SessionID(id), nil
 
-	//TODO: validate the `id` parameter using the provided `signingKey`.
-	//base64 decode the `id` parameter, HMAC hash the
-	//ID portion of the byte slice, and compare that to the
-	//HMAC hash stored in the remaining bytes. If they match,
-	//return the entire `id` parameter as a SessionID type.
-	//If not, return InvalidSessionID and ErrInvalidID.
-
-	return InvalidSessionID, ErrInvalidID
 }
 
 //String returns a string representation of the sessionID
