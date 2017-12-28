@@ -84,8 +84,8 @@ func main() {
 	hctx := handlers.NewHandlerContext(mysqlStore, redisStore, sessionsSigKey)
 
 	apiMux := http.NewServeMux()
-	apiMux.HandleFunc(apiRoot+"reports", hctx.ReportsHandler)
-	apiMux.HandleFunc(apiRoot+"reports/", hctx.ReportIDHandler)
+	apiMux.HandleFunc(apiRoot+"reports", hctx.Authenticated(hctx.ReportsHandler))
+	apiMux.HandleFunc(apiRoot+"reports/", hctx.Authenticated(hctx.ReportIDHandler))
 	serverMux := http.NewServeMux()
 	serverMux.Handle(apiRoot, handlers.Adapt(apiMux,
 		handlers.CORS(),

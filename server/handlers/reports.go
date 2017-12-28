@@ -11,7 +11,7 @@ import (
 )
 
 // ReportsHandler handles the /reports resource
-func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request) {
+func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessState *SessionState) {
 	switch r.Method {
 	// get reports with query string
 	case "GET":
@@ -71,7 +71,7 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ReportIDHandler handles the /users/<report-id> resource
-func (ctx *Context) ReportIDHandler(w http.ResponseWriter, r *http.Request) {
+func (ctx *Context) ReportIDHandler(w http.ResponseWriter, r *http.Request, sessState *SessionState) {
 	// TODO: ensure authentication
 
 	// TODO: decide if a person can edit their report..
