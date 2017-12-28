@@ -26,26 +26,27 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			respond(w, reports, http.StatusOK)
-		}
-		if len(host) != 0 && len(url) != 0 {
-			http.Error(w, "can't provide both url and host query", http.StatusBadRequest)
-			return
-		}
-		// do host database query
-		if len(host) != 0 {
-			reports, err := ctx.ReportsStore.GetByHost(host)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("error querying by host name: %v", err), http.StatusInternalServerError)
+		} else {
+			if len(host) != 0 && len(url) != 0 {
+				http.Error(w, "can't provide both url and host query", http.StatusBadRequest)
 				return
 			}
-			respond(w, reports, http.StatusOK)
-		} else { // do url database query
-			reports, err := ctx.ReportsStore.GetByURL(host)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("error querying by url: %v", err), http.StatusInternalServerError)
-				return
+			// do host database query
+			if len(host) != 0 {
+				reports, err := ctx.ReportsStore.GetByHost(host)
+				if err != nil {
+					http.Error(w, fmt.Sprintf("error querying by host name: %v", err), http.StatusInternalServerError)
+					return
+				}
+				respond(w, reports, http.StatusOK)
+			} else { // do url database query
+				reports, err := ctx.ReportsStore.GetByURL(host)
+				if err != nil {
+					http.Error(w, fmt.Sprintf("error querying by url: %v", err), http.StatusInternalServerError)
+					return
+				}
+				respond(w, reports, http.StatusOK)
 			}
-			respond(w, reports, http.StatusOK)
 		}
 	// post new report to the db
 	case "POST":

@@ -73,7 +73,7 @@ func main() {
 
 	apiMux := http.NewServeMux()
 	apiMux.HandleFunc(apiRoot+"reports", hctx.ReportsHandler)
-
+	apiMux.HandleFunc(apiRoot+"reports/", hctx.ReportIDHandler)
 	serverMux := http.NewServeMux()
 	serverMux.Handle(apiRoot, handlers.Adapt(apiMux,
 		handlers.CORS(),
