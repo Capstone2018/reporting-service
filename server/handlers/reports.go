@@ -15,7 +15,8 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessS
 	switch r.Method {
 	// get reports with query string
 	case "GET":
-		// TODO: write authentication logic..
+		// TODO: write authentication logic.. (currently you just need to be signed in to access this -- so anyone with an account)
+		// who is allowed to query the reports from the database?
 		host := strings.ToLower(r.FormValue("host"))
 		url := strings.ToLower(r.FormValue("url"))
 		if len(host) == 0 && len(url) == 0 {
@@ -57,8 +58,15 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessS
 			return
 		}
 
-		// write the new report to the database
-		r, err := ctx.ReportsStore.Insert(nr)
+		// convert the new report to a report
+		report, err := nr.ToReport()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error converting new report: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// write the report to the database
+		r, err := ctx.ReportsStore.Insert(report)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("error saving new report: %v", err), http.StatusInternalServerError)
 			return

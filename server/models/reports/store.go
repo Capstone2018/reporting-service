@@ -9,7 +9,7 @@ var ErrReportNotFound = errors.New("error not found")
 type Store interface {
 	// Insert converts a NewReport to a Report, inserts
 	// it into the db and returns it
-	Insert(newReport *NewReport) (*Report, error)
+	Insert(report *Report) (*Report, error)
 
 	// GetByID returns the Report with the given id
 	GetByID(id int64) (*Report, error)

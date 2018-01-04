@@ -52,11 +52,7 @@ func NewMySQLStore(db *sql.DB) *MySQLStore {
 }
 
 // Insert inserts a new report into the database
-func (s *MySQLStore) Insert(nr *NewReport) (*Report, error) {
-	report, err := nr.ToReport()
-	if err != nil {
-		return nil, err
-	}
+func (s *MySQLStore) Insert(report *Report) (*Report, error) {
 
 	//since we need to insert into both the `reports` and `websites`
 	//tables, and since we want those inserts to be atomic (all or nothing)
@@ -92,6 +88,7 @@ func (s *MySQLStore) Insert(nr *NewReport) (*Report, error) {
 		return nil, fmt.Errorf("error getting report id: %v", err)
 	}
 
+	// set the id of the report
 	report.ID = reportID
 
 	//now commit the transaction so that all those inserts are atomic

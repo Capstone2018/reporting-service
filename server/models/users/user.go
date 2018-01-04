@@ -3,6 +3,8 @@ package users
 import (
 	"fmt"
 	"net/mail"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 var bcryptCost = 13
@@ -35,7 +37,7 @@ func (nu *NewUser) Validate() error {
 	//validate the new user
 	//- Email field must be a valid email address
 	// TODO: decide if we should do email confirmations, would need to get Snopes email creds
-	_, err := mail.ParseAddress(nu.Email)
+	_, err := mail.ParseAddress(nu.Email) // This doesn't reallllyyy do real validation..
 	if err != nil {
 		return fmt.Errorf("Email provided is not valid: %s", err.Error())
 	}
@@ -48,7 +50,10 @@ func (nu *NewUser) Validate() error {
 		return fmt.Errorf("Password and password confirmation must match")
 	}
 
-	// TODO: decide if usernames should be implemented
+	//ensure UserName has non-zero length
+	if len(nu.UserName) == 0 {
+		return fmt.Errorf("You must supply a user name")
+	}
 
 	return nil
 }
@@ -56,34 +61,35 @@ func (nu *NewUser) Validate() error {
 //ToUser converts the NewUser to a User, setting the
 //PhotoURL and PassHash fields appropriately
 func (nu *NewUser) ToUser() (*User, error) {
-	//TODO: set the PhotoURL field of the new User to
-	//the Gravatar PhotoURL for the user's email address.
-	//see https://en.gravatar.com/site/implement/hash/
-	//and https://en.gravatar.com/site/implement/images/
+	// validate the new user
+	if err := nu.Validate(); err != nil {
+		return nil, err
+	}
 
-	//TODO: also set the ID field of the new User
-	//to a new bson ObjectId
-	//http://godoc.org/labix.org/v2/mgo/bson
+	user := &User{
+		Email:    nu.Email,
+		UserName: nu.UserName,
+	}
 
-	//TODO: also call .SetPassword() to set the PassHash
-	//field of the User to a hash of the NewUser.Password
-	return nil, nil
+	return user, user.SetPassword(nu.Password)
 }
 
 //SetPassword hashes the password and stores it in the PassHash field
 func (u *User) SetPassword(password string) error {
-	//TODO: use the bcrypt package to generate a new hash of the password
-	//https://godoc.org/golang.org/x/crypto/bcrypt
+	//bcrypt generate a new hash of the password
+	phash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
+	if err != nil {
+		return err
+	}
+	u.PassHash = phash
 	return nil
 }
 
 //Authenticate compares the plaintext password against the stored hash
 //and returns an error if they don't match, or nil if they do
 func (u *User) Authenticate(password string) error {
-	//TODO: use the bcrypt package to compare the supplied
-	//password with the stored PassHash
-	//https://godoc.org/golang.org/x/crypto/bcrypt
-	return nil
+	//bcrypt compare the supplied password with the stored PassHash
+	return bcrypt.CompareHashAndPassword(u.PassHash, []byte(password))
 }
 
 //Validate validates the user credentials
