@@ -7,18 +7,18 @@ import (
 	"time"
 )
 
-const sqlInsertReport = `insert into reports(description, createdAt, websiteID) values (?, ?, ?)`
+const sqlInsertReport = `insert into reports(description, createdAt, websiteID, userID) values (?, ?, ?, ?)`
 
 const sqlInsertWebsite = `insert into websites(url, host) values(?, ?)`
 
-const sqlSelectID = `select reports.id, description, createdAt, websiteID, url, host 
+const sqlSelectID = `select reports.id, description, createdAt, websiteID, userID, url, host 
 from reports inner join websites on (websites.id=reports.websiteID) where reports.id=?`
 
-const sqlSelectAll = `select reports.id, description, createdAt, websiteID, url, host 
+const sqlSelectAll = `select reports.id, description, createdAt, websiteID, userID, url, host 
 from reports inner join websites on (websites.id=reports.websiteID)
 order by id, createdAt`
 
-const sqlSelectURL = `select reports.id, description, createdAt, websiteID, url, host 
+const sqlSelectURL = `select reports.id, description, createdAt, websiteID, userID, url, host 
 from reports inner join websites on (websites.id=reports.websiteID) where url=?
 order by id, createdAt`
 
@@ -31,6 +31,7 @@ type reportRow struct {
 	description string
 	createdAt   time.Time
 	websiteID   int64
+	userID      int64
 	url         string
 	host        string
 }
@@ -76,7 +77,7 @@ func (s *MySQLStore) Insert(report *Report) (*Report, error) {
 	}
 
 	// then insert the report
-	res, err = tx.Exec(sqlInsertReport, report.Description, report.CreatedAt, websiteID)
+	res, err = tx.Exec(sqlInsertReport, report.Description, report.CreatedAt, websiteID, report.UserID)
 	if err != nil {
 		//rollback the transaction if there's an error
 		tx.Rollback()
@@ -153,7 +154,7 @@ func scanReports(rows *sql.Rows) ([]*Report, error) {
 	row := reportRow{}
 
 	for rows.Next() {
-		err := rows.Scan(&row.id, &row.description, &row.createdAt, &row.websiteID, &row.url, &row.host)
+		err := rows.Scan(&row.id, &row.description, &row.createdAt, &row.websiteID, &row.userID, &row.url, &row.host)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
 		}
@@ -167,6 +168,7 @@ func scanReports(rows *sql.Rows) ([]*Report, error) {
 			ID:          row.id,
 			Description: row.description,
 			CreatedAt:   row.createdAt,
+			UserID:      row.userID,
 			Website:     &Website{ID: row.websiteID, URL: u},
 		}
 		reports = append(reports, report)

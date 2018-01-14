@@ -10,13 +10,13 @@ import (
 type NewReport struct {
 	Description string `json:"description"`
 	URL         string `json:"url"`
-	CreatorID   int64  `json:"creatorID"`
+	UserID      int64  `json:"userID"`
 }
 
 // Report represents a fully validated report
 type Report struct {
 	ID          int64     `json:"id"`
-	CreatorID   int64     `json:"creatorID"`
+	UserID      int64     `json:"userID"`
 	Description string    `json:"description"`
 	Website     *Website  `json:"website"`
 	CreatedAt   time.Time `json:"createdAt"`
@@ -30,7 +30,7 @@ type Website struct {
 
 // Validate checks that a new report is valid
 func (nr *NewReport) Validate() (*url.URL, error) {
-	if nr.CreatorID == 0 {
+	if nr.UserID == 0 {
 		return nil, fmt.Errorf("no creator ID provided")
 	}
 	if len(nr.Description) == 0 {
@@ -53,7 +53,7 @@ func (nr *NewReport) ToReport() (*Report, error) {
 	report := &Report{
 		Description: nr.Description,
 		CreatedAt:   time.Now(),
-		CreatorID:   nr.CreatorID,
+		UserID:      nr.UserID,
 		Website: &Website{
 			URL: u,
 		},
