@@ -6,15 +6,13 @@ create table reports (
     report_type varchar(100),
     description varchar(1024) not null,
     created_at datetime not null,
-    user_id int(10) not null,
 
-    foreign key (ru_id) references reported_urls(id),
-    foreign key (user_id) references users(id),
+    foreign key (ru_id) references report_urls(id),
     primary key (id)
 );
 
 
-create table reported_urls (
+create table report_urls (
     id int(10) not null auto_increment,
     host_id int(10) not null,
     meta_id int(10) not null,
@@ -23,7 +21,7 @@ create table reported_urls (
     title varchar(320),
     author_string varchar(100),
     content_summary varchar(320),
-    category varchar(100),
+    content_category varchar(100) not null,
 
     foreign key (host_id) references hostnames(id),
     foreign key (meta_id) references url_metadata(id),

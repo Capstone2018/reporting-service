@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"path"
 	"strconv"
-	"strings"
 
 	"github.com/Capstone2018/reporting-service/server/models/reports"
 )
@@ -15,40 +14,40 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessS
 	switch r.Method {
 	// get reports with query string
 	case "GET":
-		// TODO: write authentication logic.. (currently you just need to be signed in to access this -- so anyone with an account)
-		// who is allowed to query the reports from the database?
-		host := strings.ToLower(r.FormValue("host"))
-		url := strings.ToLower(r.FormValue("url"))
-		if len(host) == 0 && len(url) == 0 {
-			// return all the reports in the database
-			reports, err := ctx.ReportsStore.GetAll()
-			if err != nil {
-				http.Error(w, fmt.Sprintf("error getting all reports: %v", err), http.StatusInternalServerError)
-				return
-			}
-			respond(w, reports, http.StatusOK)
-		} else {
-			if len(host) != 0 && len(url) != 0 {
-				http.Error(w, "can't provide both url and host query", http.StatusBadRequest)
-				return
-			}
-			// do host database query
-			if len(host) != 0 {
-				reports, err := ctx.ReportsStore.GetByHost(host)
-				if err != nil {
-					http.Error(w, fmt.Sprintf("error querying by host name: %v", err), http.StatusInternalServerError)
-					return
-				}
-				respond(w, reports, http.StatusOK)
-			} else { // do url database query
-				reports, err := ctx.ReportsStore.GetByURL(host)
-				if err != nil {
-					http.Error(w, fmt.Sprintf("error querying by url: %v", err), http.StatusInternalServerError)
-					return
-				}
-				respond(w, reports, http.StatusOK)
-			}
-		}
+		// // TODO: write authentication logic.. (currently you just need to be signed in to access this -- so anyone with an account)
+		// // who is allowed to query the reports from the database?
+		// host := strings.ToLower(r.FormValue("host"))
+		// url := strings.ToLower(r.FormValue("url"))
+		// if len(host) == 0 && len(url) == 0 {
+		// 	// return all the reports in the database
+		// 	reports, err := ctx.ReportsStore.GetAll()
+		// 	if err != nil {
+		// 		http.Error(w, fmt.Sprintf("error getting all reports: %v", err), http.StatusInternalServerError)
+		// 		return
+		// 	}
+		// 	respond(w, reports, http.StatusOK)
+		// } else {
+		// 	if len(host) != 0 && len(url) != 0 {
+		// 		http.Error(w, "can't provide both url and host query", http.StatusBadRequest)
+		// 		return
+		// 	}
+		// 	// do host database query
+		// 	if len(host) != 0 {
+		// 		reports, err := ctx.ReportsStore.GetByHost(host)
+		// 		if err != nil {
+		// 			http.Error(w, fmt.Sprintf("error querying by host name: %v", err), http.StatusInternalServerError)
+		// 			return
+		// 		}
+		// 		respond(w, reports, http.StatusOK)
+		// 	} else { // do url database query
+		// 		reports, err := ctx.ReportsStore.GetByURL(host)
+		// 		if err != nil {
+		// 			http.Error(w, fmt.Sprintf("error querying by url: %v", err), http.StatusInternalServerError)
+		// 			return
+		// 		}
+		// 		respond(w, reports, http.StatusOK)
+		// 	}
+		// }
 	// post new report to the db
 	case "POST":
 		// create an empty report struct and decode a json response to it
@@ -58,7 +57,7 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessS
 			return
 		}
 
-		// convert the new report to a report
+		// convert the new report to a report, which archives the data
 		report, err := nr.ToReport()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("error converting new report: %v", err), http.StatusBadRequest)
