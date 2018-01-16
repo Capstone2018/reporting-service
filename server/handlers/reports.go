@@ -3,8 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"path"
-	"strconv"
 
 	"github.com/Capstone2018/reporting-service/server/models/reports"
 )
@@ -77,29 +75,29 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessS
 	}
 }
 
-// ReportIDHandler handles the /users/<report-id> resource
-func (ctx *Context) ReportIDHandler(w http.ResponseWriter, r *http.Request, sessState *SessionState) {
-	// TODO: ensure authentication
+// // ReportIDHandler handles the /users/<report-id> resource
+// func (ctx *Context) ReportIDHandler(w http.ResponseWriter, r *http.Request, sessState *SessionState) {
+// 	// TODO: ensure authentication
 
-	// TODO: decide if a person can edit their report..
-	if r.Method != "GET" {
-		http.Error(w, "method must be GET", http.StatusBadRequest)
-		return
-	}
-	// get the report ID and query the database
-	_, idString := path.Split(r.URL.Path)
-	// make sure that the user passed in an integer
-	reportID, err := strconv.ParseInt(idString, 10, 64)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("id must be an integer: %v", err), http.StatusBadRequest)
-		return
-	}
+// 	// TODO: decide if a person can edit their report..
+// 	if r.Method != "GET" {
+// 		http.Error(w, "method must be GET", http.StatusBadRequest)
+// 		return
+// 	}
+// 	// get the report ID and query the database
+// 	_, idString := path.Split(r.URL.Path)
+// 	// make sure that the user passed in an integer
+// 	reportID, err := strconv.ParseInt(idString, 10, 64)
+// 	if err != nil {
+// 		http.Error(w, fmt.Sprintf("id must be an integer: %v", err), http.StatusBadRequest)
+// 		return
+// 	}
 
-	// query db and write the report back to the user
-	report, err := ctx.ReportsStore.GetByID(reportID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("error querying by id: %v", err), http.StatusInternalServerError)
-		return
-	}
-	respond(w, report, http.StatusOK)
-}
+// 	// query db and write the report back to the user
+// 	report, err := ctx.ReportsStore.GetByID(reportID)
+// 	if err != nil {
+// 		http.Error(w, fmt.Sprintf("error querying by id: %v", err), http.StatusInternalServerError)
+// 		return
+// 	}
+// 	respond(w, report, http.StatusOK)
+// }

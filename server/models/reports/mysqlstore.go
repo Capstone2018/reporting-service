@@ -3,11 +3,12 @@ package reports
 import (
 	"database/sql"
 	"fmt"
+	"log"
 )
 
-const sqlInsertReport = `insert into reports(report_type, description, created_at, ru_id) values (?, ?, ?, ?, ?)`
+const sqlInsertReport = `insert into reports(ru_id, meta_id, report_type, description, created_at) values ((select id from report_urls where path = ?), (select id from url_metadata where query = ? and fragment = ?), ?, ?, ?)`
 
-const sqlInsertReportURL = `insert into report_urls(host_id, meta_id, url, archive_url, title, author_string, content_summary, content_category) values(?, ?, ?, ?, ?, ?, ?, ?)`
+const sqlInsertReportURL = `insert into report_urls(host_id, path, archive_url, title, author_string, content_summary, content_category) values((select id from hostnames where host = ?), ?, ?, ?, ?, ?, ?)`
 
 const sqlInsertURLMeta = `insert into url_metadata(query, fragment) values(?, ?)`
 
@@ -64,49 +65,14 @@ func (s *MySQLStore) Insert(report *Report) (*Report, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error begining transaction: %v", err)
 	}
-
-	// first insert into hostnames
-	res, err := tx.Exec(sqlInsertHostnames, report.ReportURL.URL.Host)
+	log.Printf("call insert_report(%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v)", report.ReportURL.URL.Host, report.ReportURL.URL.EscapedPath(),
+		report.ReportURL.ArchiveURL, report.ReportURL.URL.RawQuery, report.ReportURL.URL.Fragment, report.ReportType, report.Description,
+		report.CreatedAt, report.ReportURL.Title, report.ReportURL.AuthorString, report.ReportURL.ContentSummary, report.ReportURL.ContentCategory)
+	// host, path, archive_url, query, fragment, report_type, description, created_at, title, author_string, content_summary, content_category
+	res, err := tx.Exec("call insert_report(?,?,?,?,?,?,?,?,?,?,?,?)", report.ReportURL.URL.Host, report.ReportURL.URL.EscapedPath(),
+		report.ReportURL.ArchiveURL, report.ReportURL.URL.RawQuery, report.ReportURL.URL.Fragment, report.ReportType, report.Description,
+		report.CreatedAt, report.ReportURL.Title, report.ReportURL.AuthorString, report.ReportURL.ContentSummary, report.ReportURL.ContentCategory)
 	if err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("error inserting hostname: %v", err)
-	}
-	hostID, err := res.LastInsertId()
-	if err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("error getting host id: %v", err)
-	}
-
-	// next insert into url_metadata
-	res, err = tx.Exec(sqlInsertURLMeta, report.ReportURL.URL.RawQuery)
-	if err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("error inserting url metadata: %v", err)
-	}
-	metaID, err := res.LastInsertId()
-	if err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("error getting url metadata id: %v", err)
-	}
-
-	// then insert the report_url
-	// TODO: test the fuck out of this... Not sure the difference between raw query and escaped path
-	res, err = tx.Exec(sqlInsertReportURL, hostID, metaID, report.ReportURL.URL.EscapedPath(),
-		report.ReportURL.ArchiveURL, report.ReportURL.Title, report.ReportURL.AuthorString, report.ReportURL.ContentSummary, report.ReportURL.ContentCategory)
-	if err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("error inserting report url: %v", err)
-	}
-	reportURLID, err := res.LastInsertId()
-	if err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("error getting report url id: %v", err)
-	}
-
-	// finally insert the report
-	res, err = tx.Exec(sqlInsertReport, report.ReportType, report.Description, report.CreatedAt, reportURLID)
-	if err != nil {
-		//rollback the transaction if there's an error
 		tx.Rollback()
 		return nil, fmt.Errorf("error inserting report: %v", err)
 	}
@@ -115,6 +81,57 @@ func (s *MySQLStore) Insert(report *Report) (*Report, error) {
 		tx.Rollback()
 		return nil, fmt.Errorf("error getting report id: %v", err)
 	}
+
+	// // try to insert the report
+	// res, err := tx.Exec(sqlInsertReport, report.ReportURL.URL.EscapedPath(), report.ReportURL.URL.RawQuery, report.ReportURL.URL.Fragment, report.ReportType, report.Description, report.CreatedAt)
+	// if err != nil {
+	// 	//rollback the transaction if there's an error
+	// 	tx.Rollback()
+	// 	return nil, fmt.Errorf("error inserting report: %v", err)
+	// }
+	// reportID, err := res.LastInsertId()
+	// if err != nil {
+	// 	tx.Rollback()
+	// 	return nil, fmt.Errorf("error getting report id: %v", err)
+	// }
+
+	// // insert the report_url
+	// // TODO: test the fuck out of this... Not sure the difference between raw query and escaped path
+	// res, err = tx.Exec(sqlInsertReportURL, report.ReportURL.URL.Host, report.ReportURL.URL.EscapedPath(),
+	// 	report.ReportURL.ArchiveURL, report.ReportURL.Title, report.ReportURL.AuthorString, report.ReportURL.ContentSummary, report.ReportURL.ContentCategory)
+	// if err != nil {
+	// 	tx.Rollback()
+	// 	return nil, fmt.Errorf("error inserting report url: %v", err)
+	// }
+	// // reportURLID, err := res.LastInsertId()
+	// // if err != nil {
+	// // 	tx.Rollback()
+	// // 	return nil, fmt.Errorf("error getting report url id: %v", err)
+	// // }
+
+	// // next insert into url_metadata
+	// res, err = tx.Exec(sqlInsertURLMeta, report.ReportURL.URL.RawQuery, report.ReportURL.URL.Fragment)
+	// if err != nil {
+	// 	tx.Rollback()
+	// 	return nil, fmt.Errorf("error inserting url metadata: %v", err)
+	// }
+	// // metaID, err := res.LastInsertId()
+	// // if err != nil {
+	// // 	tx.Rollback()
+	// // 	return nil, fmt.Errorf("error getting url metadata id: %v", err)
+	// // }
+
+	// // last insert into hostnames
+	// res, err = tx.Exec(sqlInsertHostnames, report.ReportURL.URL.Host)
+	// if err != nil {
+	// 	tx.Rollback()
+	// 	return nil, fmt.Errorf("error inserting hostname: %v", err)
+	// }
+	// // hostID, err := res.LastInsertId()
+	// // if err != nil {
+	// // 	tx.Rollback()
+	// // 	return nil, fmt.Errorf("error getting host id: %v", err)
+	// // }
 
 	// set the id of the report
 	report.ID = reportID
