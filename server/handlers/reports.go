@@ -9,6 +9,12 @@ import (
 
 // ReportsHandler handles the /reports resource
 func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessState *SessionState) {
+	// TODO: add in querying ability
+	if r.Method != "POST" {
+		http.Error(w, "method must be POST", http.StatusBadRequest)
+		return
+	}
+
 	switch r.Method {
 	// get reports with query string
 	case "GET":
@@ -55,12 +61,20 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessS
 			return
 		}
 
-		// convert the new report to a report, which archives the data
+		// convert the new report to a report
 		report, err := nr.ToReport()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("error converting new report: %v", err), http.StatusBadRequest)
 			return
 		}
+
+		// TODO: get the Opengraph properties
+
+		// archive.org the submitted URL
+		// waybackID, err := archive(u.String())
+		// if err != nil {
+		// 	log.Printf("unable to archive URL: %v", err)
+		// }
 
 		// write the report to the database
 		r, err := ctx.ReportsStore.Insert(report)

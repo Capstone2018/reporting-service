@@ -43,15 +43,16 @@ func connectToMySQL() (*sql.DB, error) {
 	//tell the MySQL driver to parse DATETIME
 	//column values into go time.Time values
 	mysqlConfig.ParseTime = true
-
-	log.Println(mysqlConfig.FormatDSN())
+	// connect to the mysql database
 	db, err := sql.Open("mysql", mysqlConfig.FormatDSN())
 	if err != nil {
 		db.Close()
 		log.Fatalf("error opening mysql database: %v", err)
 	}
+	// connection retry logic
 	for i := 1; i < maxConnRetries; i++ {
 		err = db.Ping()
+		// return if we don't find an error
 		if err == nil {
 			return db, nil
 		}
@@ -59,6 +60,7 @@ func connectToMySQL() (*sql.DB, error) {
 		log.Printf("will attempt another connection in %d seconds", i*2)
 		time.Sleep(time.Duration(i*2) * time.Second)
 	}
+	// only close the connection if we hit an error and reached maxConnRetries
 	db.Close()
 	return nil, err
 }

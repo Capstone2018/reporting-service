@@ -42,14 +42,6 @@ create table reports (
     primary key (id)
 );
 
-create table test (
-    id int(10) not null auto_increment,
-    at_host varchar(100),
-    tick_host varchar(100),
-    host_id int(10),
-    primary key (id)
-);
-
 delimiter $$
 create procedure insert_report 
 (in `host` varchar(2083), in `path` varchar(2083), 
