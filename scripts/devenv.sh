@@ -16,7 +16,8 @@ export REPORTING_MYSQL_IMAGE=aethanol/mysqlreports
 # database name in which our schema will be created
 export MYSQL_DATABASE=reporting
 
-# random MySQL root password
-export MYSQL_ROOT_PASSWORD=$(openssl rand -base64 18)
+# random MySQL root password 
+# use $(openssl rand -base64 18) in prod
+export MYSQL_ROOT_PASSWORD=supersecret 
 
 export MYSQL_ADDR=devmysql:3306

@@ -6,15 +6,15 @@ cd ../server
 GOOS=linux go build
 
 echo "building reporting service docker image"
-docker build -t aethanol/reporting-service .
+docker build -t aethan/reporting-service .
 
 echo "cleaning up reporting service.."
 go clean
 cd -
 
-echo "building msql database"
+echo "building mysql database"
 cd ./sql
-docker build -t aethanol/mysqlreports .
+docker build -t aethan/mysqlreports .
 cd -
 
 echo "pruning.."
