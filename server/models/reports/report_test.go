@@ -113,12 +113,36 @@ func TestNewReportValidate(t *testing.T) {
 }
 
 func TestNewReportToReport(t *testing.T) {
-	// cases := []struct {
-	// 	name        string
-	// 	hint        string
-	// 	report      *NewReport
-	// 	expectError bool
-	// }{
-	// 	{},
-	// }
+	newReport := &NewReport{
+		UserDescription: "This is a valid description, thanks for submitting your report",
+		ReportType:      "Misleading Title",
+		UserID:          1,
+	}
+
+	cases := []struct {
+		name        string
+		hint        string
+		report      *NewReport
+		expectError bool
+	}{
+		{
+			"Valid New Report",
+			"Should not return any errors",
+			newReport,
+			false,
+		},
+	}
+
+	for _, c := range cases {
+		r, err := c.report.ToReport()
+		if !c.expectError && err != nil {
+			t.Errorf("case %s: unexpected error validating user: %v\nHINT: %s", c.name, err, c.hint)
+		}
+		if c.expectError && err == nil {
+			t.Errorf("case %s: expected validation error but didn't get one\nHINT: %s", c.name, c.hint)
+		}
+		if r.CreatedAt.IsZero() {
+			t.Errorf("case %s: expected non-zero created at field\nHINT: %s", c.name, c.hint)
+		}
+	}
 }
