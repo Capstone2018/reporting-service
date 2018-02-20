@@ -1,8 +1,6 @@
 -- schema for reporting db
-create table url_metadata (
+create table users (
     id int(10) not null auto_increment,
-    query varchar(1024),
-    fragment varchar(320),
 
     primary key (id)
 );
@@ -14,88 +12,130 @@ create table hostnames (
     primary key (id)
 );
 
-create table report_urls (
+create table urls (
     id int(10) not null auto_increment,
     host_id int(10) not null,
     path varchar(2083) not null,
-    archive_url varchar(2083) not null,
-    title varchar(320),
-    author_string varchar(100),
-    content_summary varchar(320),
-    content_category varchar(100) not null,
 
     foreign key (host_id) references hostnames(id),
     
     primary key (id)
 );
 
-create table reports (
+create table images (
     id int(10) not null auto_increment,
-    ru_id int(10) not null,
-    meta_id int(10) not null,
-    report_type varchar(100),
-    description varchar(1024) not null,
-    created_at datetime not null,
+    og_url int(10) not null,
+    url_id int(10) not null,
+    type varchar(7),
+    width int(5),
+    height int(5),
 
-    foreign key (ru_id) references report_urls(id),
-    foreign key (meta_id) references url_metadata(id),
+    foreign key (og_url) references opengraph(id),
+    foreign key (url_id) references urls(id),
+
     primary key (id)
 );
 
-delimiter $$
-create procedure insert_report 
-(in `host` varchar(2083), in `path` varchar(2083), 
-in `archive_url` varchar(2083), in `query` varchar(1024), 
-in `fragment` varchar(320), in `report_type` varchar(100), 
-in `description` varchar(1024), in `created_at` datetime,
-in `title` varchar(320), in `author_string` varchar(100), 
-in `content_summary` varchar(320), in `content_category` varchar(100))
-begin
-    declare host_id int;
-    declare meta_id int;
-    declare ru_id int;
-    declare exit handler for sqlexception
-    begin
-        rollback;
-    end;
+create table audios (
+    id int(10) not null auto_increment,
+    og_url int(10) not null,
+    url_id int(10) not null,
+    type varchar(7),
+    width int(5),
+    height int(5),
 
-    start transaction;
-        -- get the host_id if the host already exists
-        set @host_id = (select h.id from hostnames h where h.host = `host`);
-        if (@host_id is null) then
-            insert into hostnames(host) values(host);
-            set @host_id = (select last_insert_id());
-        end if;
-        
-        -- get the meta_id if the url_meta already exists
-        set @meta_id = (
-            select u.id from url_metadata u 
-            where u.query = `query` and u.fragment = `fragment`
-            );
-        if (@meta_id is null) then
-            insert into url_metadata(query, fragment) values(`query`, `fragment`);
-            set @meta_id = (select last_insert_id());
-        end if;
+    foreign key (og_url) references opengraph(id),
+    foreign key (url_id) references urls(id),
+    
+    primary key (id)
+);
 
-        -- get the ru_id if the report url already exists
-        set @ru_id = (
-            select r.id from report_urls r 
-            where r.host_id = @host_id and r.path = `path`
-            and r.archive_url = `archive_url` and r.title = `title` 
-            and r.content_category = `content_category` 
-            and r.content_summary = `content_summary`
-            );
-        if (@ru_id is null) then
-            insert into report_urls(host_id, path, archive_url, title, author_string, content_summary, content_category) 
-                values(@host_id, `path`, `archive_url`, `title`, `author_string`, `content_summary`, `content_category`);
-            set @ru_id = (select last_insert_id());
-        end if;
+create table videos (
+    id int(10) not null auto_increment,
+    og_url int(10) not null,
+    url_id int(10) not null,
+    type varchar(7),
+    width int(5),
+    height int(5),
+    
+    foreign key (og_url) references opengraph(id),
+    foreign key (url_id) references urls(id),
+    
+    primary key (id)
+);
 
-        -- finally insert into the reports table
-        insert into reports(ru_id, meta_id, report_type, description, created_at) 
-            values(@ru_id, @meta_id, `report_type`, `description`, `created_at`);
-    commit;
-end;
-$$
+create table profiles (
+    id int(10) not null auto_increment,
+    url_id int(10) not null,
+    firstname varchar(100),
+    lastname varchar(100),
+    username varchar(100),
+    gender varchar(10),
+    foreign key (url_id) references urls(id),
+    
+    primary key (id)
+);
 
-delimiter ;
+create table articles (
+    id int(10) not null auto_increment,
+    url_id int(10) not null,
+    
+    published_time datetime,
+    modified_time datetime,
+    expiration_time datetime,
+    section varchar(100),
+    tags varchar(300),
+
+    foreign key (url_id) references urls(id),
+    foreign key (author_id) references authors(id),
+    
+    primary key (id)
+);
+
+create table books (
+    id int(10) not null auto_increment,
+    url_id int(10) not null,
+    author_id int(10),
+
+    isbn varchar(100),
+    release_date datetime,
+    tags varchar(300),
+    foreign key (url_id) references urls(id),
+    
+    primary key (id)
+);
+
+create table opengraph (
+    id int(10) not null auto_increment,
+    url_id int(10) not null,
+
+    article_id int(10),
+    book_id int(10),
+    profile_id int(10),
+    
+    title varchar(40),
+    type varchar(7), 
+    description varchar(300),
+    determiner varchar(5), 
+    locale varchar(20),
+    locales_alternate varchar(100),
+
+    foreign key (url_id) references urls(id),
+
+    primary key (id)
+);
+
+
+create table reports (
+    id int(10) not null auto_increment,
+    user_id int(10) not null,
+    og_id int(10) not null,
+    report_type varchar(100) not null,
+    user_description varchar(1024) not null,
+    created_at datetime not null,
+
+    foreign key (user_id) references users(id),
+    foreign key (og_id) references opengraph(id),
+
+    primary key (id)
+);

@@ -14,12 +14,12 @@ type OpenGraph struct {
 	URL              string   `json:"url"`
 	Description      string   `json:"description"`
 	Determiner       string   `json:"determiner"`
+	SiteName         string   `json:"siteName"`
 	Locale           string   `json:"locale"`
 	LocalesAlternate []string `json:"localesAlternate"`
 	Images           []*Image `json:"images"`
 	Audios           []*Audio `json:"audios"`
 	Videos           []*Video `json:"videos"`
-	SiteName         string   `json:"siteName"`
 	Article          *Article `json:"article,omitempty"`
 	Book             *Book    `json:"book,omitempty"`
 	Profile          *Profile `json:"profile,omitempty"`
@@ -52,12 +52,12 @@ type Audio struct {
 
 // Article represents opengraph article properties
 type Article struct {
-	Author         []string  `json:"author"`
-	PublishedTime  time.Time `json:"publishedTime"`
-	ModifiedTime   time.Time `json:"modifiedTime"`
-	ExpirationTime time.Time `json:"expirationTime"`
-	Section        string    `json:"section"`
-	Tag            []string  `json:"tag"`
+	Authors        []*Profile `json:"authors"`
+	PublishedTime  time.Time  `json:"publishedTime"`
+	ModifiedTime   time.Time  `json:"modifiedTime"`
+	ExpirationTime time.Time  `json:"expirationTime"`
+	Section        string     `json:"section"`
+	Tags           []string   `json:"tags"`
 }
 
 // Profile contains Open Graph Profile structure
