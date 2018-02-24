@@ -14,7 +14,7 @@ type User struct {
 	ID       int64  `json:"id"`
 	Email    string `json:"email"`
 	PassHash []byte `json:"-"` //stored, but not encoded to clients
-	UserName string `json:"userName"`
+	UserName string `json:"user_name"`
 }
 
 //Credentials represents user sign-in credentials
@@ -27,8 +27,8 @@ type Credentials struct {
 type NewUser struct {
 	Email        string `json:"email"`
 	Password     string `json:"password"`
-	PasswordConf string `json:"passwordConf"`
-	UserName     string `json:"userName"` // TODO: decide if we should use usernames
+	PasswordConf string `json:"password_conf"`
+	UserName     string `json:"user_name"` // TODO: decide if we should use usernames
 }
 
 //Validate validates the new user and returns an error if

@@ -1,5 +1,7 @@
 package reports
 
+import "database/sql"
+
 // import (
 // 	"database/sql"
 // 	"fmt"
@@ -40,24 +42,26 @@ package reports
 // // 	host        string
 // // }
 
-// //MySQLStore implements Store for a MySQL database
-// type MySQLStore struct {
-// 	db *sql.DB
-// }
+//MySQLStore implements Store for a MySQL database
+type MySQLStore struct {
+	db *sql.DB
+}
 
-// //NewMySQLStore constructs a MySQLStore
-// func NewMySQLStore(db *sql.DB) *MySQLStore {
-// 	if db == nil {
-// 		panic("nil pointer passed to NewMySQLStore")
-// 	}
+//NewMySQLStore constructs a MySQLStore
+func NewMySQLStore(db *sql.DB) *MySQLStore {
+	if db == nil {
+		panic("nil pointer passed to NewMySQLStore")
+	}
 
-// 	return &MySQLStore{
-// 		db: db,
-// 	}
-// }
+	return &MySQLStore{
+		db: db,
+	}
+}
 
-// // Insert inserts a new report into the database
-// func (s *MySQLStore) Insert(report *Report) (*Report, error) {
+// Insert inserts a new report into the database
+func (s *MySQLStore) Insert(report *Report) (*Report, error) {
+	return nil, nil
+}
 
 // 	//since we need to insert into both the `reports` and `websites`
 // 	//tables, and since we want those inserts to be atomic (all or nothing)

@@ -36,7 +36,7 @@ func NewMySQLStore(db *sql.DB) *MySQLStore {
 
 // Insert inserts a new user to the database
 func (s *MySQLStore) Insert(newUser *NewUser) (*User, error) {
-
+	return nil, nil
 }
 
 // GetByID returns a user with a given id

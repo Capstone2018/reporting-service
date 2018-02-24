@@ -3,43 +3,33 @@ package reports
 import (
 	"fmt"
 	"time"
-
-	"github.com/Capstone2018/reporting-service/server/models/opengraph"
 )
+
+type page struct {
+	ID  int64  `json:"id"`
+	URL string `json:"url"`
+}
 
 // NewReport represents a new report being posted to the service
 type NewReport struct {
-	UserDescription string `json:"userDescription"`
-	ReportType      string `json:"reportType"`
-	//OpenGraph       *opengraph.OpenGraph `json:"og"`
-	UserID int64 `json:"userID"`
+	Email           string   `json:"email"`
+	UserDescription string   `json:"user_description"`
+	Pages           []page   `json:"pages"`
+	ReportTypes     []string `json:"report_types"`
 }
 
 // Report represents a fully validated report
 type Report struct {
-	ID              int64                `json:"id"`
-	UserID          int64                `json:"userID"`
-	UserDescription string               `json:"userDescription"`
-	ReportType      string               `json:"reportType"`
-	OpenGraph       *opengraph.OpenGraph `json:"og"`
-	CreatedAt       time.Time            `json:"createdAt"`
+	ID              int64     `json:"id"`
+	Email           string    `json:"email"`
+	UserDescription string    `json:"user_description"`
+	Pages           []page    `json:"pages"`
+	ReportTypes     []string  `json:"report_types"`
+	CreatedAt       time.Time `json:"created_at"`
 }
-
-// // ReportURL represents the data assocated with the URL/site of a report
-// type ReportURL struct {
-// 	ID           int64    `json:"id"`
-// 	URL          *url.URL `json:"url"`
-// 	ArchiveURL   string   `json:"archiveURL"`
-// 	Title        string   `json:"title"`
-// 	AuthorString string   `json:"authorString"`
-// }
 
 // Validate checks that a new report is valid
 func (nr *NewReport) Validate() error {
-	// make sure that a userID was passed when creating a NewReport
-	if nr.UserID == 0 {
-		return fmt.Errorf("no creator ID provided")
-	}
 
 	// validate user input
 	if len(nr.UserDescription) == 0 {
@@ -48,9 +38,12 @@ func (nr *NewReport) Validate() error {
 	if len(nr.UserDescription) > 300 {
 		return fmt.Errorf("user description len > 300")
 	}
-	if !(nr.ReportType == "Misleading Title" || nr.ReportType == "False Information" || nr.ReportType == "Other") {
-		return fmt.Errorf("report type not allowed value")
+	// check that the user didn't provide too many report types
+	if len(nr.ReportTypes) > 5 {
+		return fmt.Errorf("user provided more than 5 report types")
 	}
+
+	// TODO: validate all the report types from a list of valid reports
 
 	return nil
 }
@@ -65,8 +58,9 @@ func (nr *NewReport) ToReport() (*Report, error) {
 
 	report := &Report{
 		UserDescription: nr.UserDescription,
-		UserID:          nr.UserID,
-		ReportType:      nr.ReportType,
+		Pages:           nr.Pages,
+		Email:           nr.Email,
+		ReportTypes:     nr.ReportTypes,
 		CreatedAt:       time.Now(),
 	}
 

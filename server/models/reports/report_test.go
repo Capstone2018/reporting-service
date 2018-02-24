@@ -4,10 +4,11 @@ import "testing"
 
 func TestNewReportValidate(t *testing.T) {
 	newReport := &NewReport{
+		Email:           "test@test.com",
 		UserDescription: "This is a valid description, thanks for submitting your report",
-		ReportType:      "Misleading Title",
-		UserID:          1,
 	}
+	newReport.ReportTypes = make([]string, 10)
+	newReport.ReportTypes = append(newReport.ReportTypes, "Misleading Information", "Doctored Image")
 
 	cases := []struct {
 		name        string

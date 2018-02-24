@@ -1,9 +1,10 @@
 -- schema for reporting db
--- create table users (
---     id serial not null unique,
-
---     primary key (id)
--- );
+create table users (
+    id serial not null unique,
+    email varchar(2083) not null,
+    count integer not null,
+    primary key (id)
+);
 
 create table hostnames (
     id serial not null unique,
@@ -25,12 +26,8 @@ create table urls (
 create table opengraph (
     id serial not null unique,
     created_at timestamp not null,
-
-    url_id integer not null,
-    article_id integer,
-    book_id integer,
-    profile_id integer,
     
+    url varchar(2083),
     title varchar(40),
     type varchar(7), 
     description varchar(300),
@@ -44,33 +41,66 @@ create table opengraph (
     articles jsonb,
     books jsonb,
 
+    blob jsonb,
+
     foreign key (url_id) references urls(id),
 
     primary key (id)
 );
 
-create table query (
+create table query_fragment (
     id serial not null unique,
+    query varchar(25),
+    fragment varchar(25),
+
+    primary key(id)
 );
 
-create table page (
+create table pages (
     id serial not null unique,
-    created_at timestamp not null, 
+    created_at timestamp not null,
+    
+    url_id integer not null,
+    og_id integer,
+    report_id integer,
+    query_fragment_id integer,
+    
+    wayback_id varchar(100),
+
+    url_string varchar(2083) not null,
+
+    foreign key (url_id) references urls(id),
+    foreign key (og_id) references opengraph(id), 
+    foreign key (report_id) references reports(id),
+    foreign key (query_fragment_id) references query_fragment(id),
 
     primary key (id)
+);
+
+create table report_types (
+    id serial not null unique,
+    type varchar(100) not null,
+
+    primary key (id)
+);
+
+create table report_report_types (
+    report_id integer not null,
+    type_id integer not null,
+
+    foreign key report_id references reports(id),
+    foreign key report_type_id references report_types(id)
 );
 
 
 create table reports (
     id serial not null unique,
     user_id integer not null,
-    og_id integer not null,
-    report_type varchar(100) not null,
+
     user_description varchar(1024) not null,
     created_at timestamp not null,
 
     foreign key (user_id) references users(id),
-    foreign key (og_id) references opengraph(id),
-
+    
     primary key (id)
 );

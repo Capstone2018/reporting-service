@@ -78,7 +78,7 @@ func main() {
 	mysqlStore := reports.NewMySQLStore(db)
 
 	// connect to redis, default timeout for sessions to be 1 hour
-	// TODO: determine how long a user should be signed in for
+	// TODO: remove redis (maybe use it later for other caching?)
 	client := redis.NewClient(&redis.Options{Addr: redisAddr})
 	redisStore := sessions.NewRedisStore(client, time.Hour)
 

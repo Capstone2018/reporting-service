@@ -2,10 +2,18 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/Capstone2018/reporting-service/server/models/reports"
 )
+
+type pageMeta struct {
+	URL       *url.URL
+	OpenGraph *OpenGraph
+	WaybackID string
+}
 
 // ReportsHandler handles the /reports resource
 func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessState *SessionState) {
@@ -67,14 +75,31 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessS
 			http.Error(w, fmt.Sprintf("error converting new report: %v", err), http.StatusBadRequest)
 			return
 		}
+		meta := make([]*pageMeta, len(report.URLs))
 
-		// TODO: get the Opengraph properties
+		// archive and get the opengraph properties for the submitted URLs
+		for _, u := range report.URLs {
+			pm := new(pageMeta)
+			pm.URL = u
 
-		// archive.org the submitted URL
-		// waybackID, err := archive(u.String())
-		// if err != nil {
-		// 	log.Printf("unable to archive URL: %v", err)
-		// }
+			// archive the page URL
+			waybackID, err := reports.Archive(u.String())
+			if err != nil {
+				log.Printf("unable to archive URL: %v", err)
+			} else {
+				pm.WaybackID = waybackID
+			}
+			// process the opengraph
+			og := NewOpenGraph()
+			err = og.ProcessURL(u.String())
+			if err != nil {
+				log.Printf("unable to process opengraph from URL: %v", err)
+			} else {
+				pm.OpenGraph = og
+			}
+			// add the page metadata to the slice
+			meta = append(meta, pm)
+		}
 
 		// write the report to the database
 		r, err := ctx.ReportsStore.Insert(report)
@@ -82,8 +107,6 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessS
 			http.Error(w, fmt.Sprintf("error saving new report: %v", err), http.StatusInternalServerError)
 			return
 		}
-
-		// TODO: write to the mq when we decide to build a triage system
 
 		respond(w, r, http.StatusCreated)
 	}
