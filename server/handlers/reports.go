@@ -2,21 +2,19 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
-	"net/url"
 
 	"github.com/Capstone2018/reporting-service/server/models/reports"
 )
 
-type pageMeta struct {
-	URL       *url.URL
-	OpenGraph *OpenGraph
-	WaybackID string
-}
+// type pageMeta struct {
+// 	URL       *url.URL
+// 	OpenGraph *OpenGraph
+// 	WaybackID string
+// }
 
 // ReportsHandler handles the /reports resource
-func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessState *SessionState) {
+func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: add in querying ability
 	if r.Method != "POST" {
 		http.Error(w, "method must be POST", http.StatusBadRequest)
@@ -75,31 +73,31 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request, sessS
 			http.Error(w, fmt.Sprintf("error converting new report: %v", err), http.StatusBadRequest)
 			return
 		}
-		meta := make([]*pageMeta, len(report.URLs))
+		// meta := make([]*pageMeta, len(report.URLs))
 
-		// archive and get the opengraph properties for the submitted URLs
-		for _, u := range report.URLs {
-			pm := new(pageMeta)
-			pm.URL = u
+		// // archive and get the opengraph properties for the submitted URLs
+		// for _, u := range report.URLs {
+		// 	pm := new(pageMeta)
+		// 	pm.URL = u
 
-			// archive the page URL
-			waybackID, err := reports.Archive(u.String())
-			if err != nil {
-				log.Printf("unable to archive URL: %v", err)
-			} else {
-				pm.WaybackID = waybackID
-			}
-			// process the opengraph
-			og := NewOpenGraph()
-			err = og.ProcessURL(u.String())
-			if err != nil {
-				log.Printf("unable to process opengraph from URL: %v", err)
-			} else {
-				pm.OpenGraph = og
-			}
-			// add the page metadata to the slice
-			meta = append(meta, pm)
-		}
+		// 	// archive the page URL
+		// 	waybackID, err := reports.Archive(u.String())
+		// 	if err != nil {
+		// 		log.Printf("unable to archive URL: %v", err)
+		// 	} else {
+		// 		pm.WaybackID = waybackID
+		// 	}
+		// 	// process the opengraph
+		// 	og := NewOpenGraph()
+		// 	err = og.ProcessURL(u.String())
+		// 	if err != nil {
+		// 		log.Printf("unable to process opengraph from URL: %v", err)
+		// 	} else {
+		// 		pm.OpenGraph = og
+		// 	}
+		// 	// add the page metadata to the slice
+		// 	meta = append(meta, pm)
+		//}
 
 		// write the report to the database
 		r, err := ctx.ReportsStore.Insert(report)
