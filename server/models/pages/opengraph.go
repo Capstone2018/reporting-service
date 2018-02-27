@@ -2,7 +2,7 @@ package pages
 
 import (
 	"fmt"
-	"net/http"
+	"io"
 	"net/url"
 	"time"
 )
@@ -10,20 +10,22 @@ import (
 // OpenGraph represents opengraph protocol properties,
 // describes objects in the semantic web
 type OpenGraph struct {
-	Title            string   `json:"title,omitempty"`
-	Type             string   `json:"type,omitempty"`
-	URL              string   `json:"url,omitempty"`
-	Description      string   `json:"description,omitempty"`
-	Determiner       string   `json:"determiner,omitempty"`
-	SiteName         string   `json:"siteName,omitempty"`
-	Locale           string   `json:"locale,omitempty"`
-	LocalesAlternate []string `json:"localesAlternate,omitempty"`
-	Images           []*Image `json:"images,omitempty"`
-	Audios           []*Audio `json:"audios,omitempty"`
-	Videos           []*Video `json:"videos,omitempty"`
-	Article          *Article `json:"article,omitempty"`
-	Book             *Book    `json:"book,omitempty"`
-	Profile          *Profile `json:"profile,omitempty"`
+	CreatedAt        time.Time `json:"created_at"`
+	ID               int64     `json:"id"`
+	Title            string    `json:"title,omitempty"`
+	Type             string    `json:"type,omitempty"`
+	URL              string    `json:"url,omitempty"`
+	Description      string    `json:"description,omitempty"`
+	Determiner       string    `json:"determiner,omitempty"`
+	SiteName         string    `json:"siteName,omitempty"`
+	Locale           string    `json:"locale,omitempty"`
+	LocalesAlternate []string  `json:"localesAlternate,omitempty"`
+	Images           []*Image  `json:"images,omitempty"`
+	Audios           []*Audio  `json:"audios,omitempty"`
+	Videos           []*Video  `json:"videos,omitempty"`
+	Article          *Article  `json:"article,omitempty"`
+	Book             *Book     `json:"book,omitempty"`
+	Profile          *Profile  `json:"profile,omitempty"`
 }
 
 // Image defines Open Graph Image type
@@ -77,50 +79,18 @@ type Book struct {
 	Authors     []*Profile `json:"authors"`
 }
 
-var client = &http.Client{
-	Timeout: time.Second * 30,
-}
-
 // NewOpenGraph returns new instance of Open Graph structure
 func NewOpenGraph() *OpenGraph {
-	return &OpenGraph{}
+	return &OpenGraph{
+		CreatedAt: time.Now(),
+	}
 }
 
-// ProcessURL parses a url's HTML to generate opengraph properties from it
-func (og *OpenGraph) ProcessURL(pageURL string) error {
+// ProcessStream parses an HTML stream to generate opengraph properties from it
+func (og *OpenGraph) ProcessStream(pageURL string, htmlStream io.ReadCloser) error {
 
-	// body, err := fetchHTML(pageURL)
-	// if err != nil {
-	// 	return fmt.Errorf("error fetching URL: " + err.Error())
-	// }
-
-	// defer body.Close()
 	return nil
 }
-
-// //fetchHTML does an HTTP GET for the pageURL
-// //and returns an error if the status code is >= 400
-// //or the content type doesn't start with `text/html`.
-// //If all goes well, it returns the response body.
-// func fetchHTML(pageURL string) (io.ReadCloser, error) {
-// 	resp, err := client.Get(pageURL)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	//check status code
-// 	if resp.StatusCode >= 400 {
-// 		return nil, fmt.Errorf("response status code was %d", resp.StatusCode)
-// 	}
-
-// 	//check content-type
-// 	contentType := resp.Header.Get(headerContentType)
-// 	if !strings.HasPrefix(contentType, contentTypeTextHTML) {
-// 		return nil, fmt.Errorf("requested URL is not an HTML page: content type was %s", contentType)
-// 	}
-
-// 	return resp.Body, nil
-// }
 
 // Validate the open graph
 func (og *OpenGraph) Validate() error {
