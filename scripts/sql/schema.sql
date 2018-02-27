@@ -6,19 +6,12 @@ create table users (
     primary key (id)
 );
 
-create table hostnames (
-    id serial not null unique,
-    host varchar(2083) not null,
-
-    primary key (id)
-);
 
 create table urls (
     id serial not null unique,
-    host_id integer not null,
+    host varchar(2083) not null,
     path varchar(2083) not null,
 
-    foreign key (host_id) references hostnames(id),
     
     primary key (id)
 );
@@ -37,13 +30,11 @@ create table opengraph (
     images jsonb,
     audios jsonb,
     videos jsonb,
-    profiles jsonb,
-    articles jsonb,
-    books jsonb,
+    profile jsonb,
+    article jsonb,
+    book jsonb,
 
-    blob jsonb,
-
-    foreign key (url_id) references urls(id),
+    blob jsonb not null,
 
     primary key (id)
 );
@@ -64,9 +55,8 @@ create table pages (
     og_id integer,
     report_id integer,
     query_fragment_id integer,
-    
-    wayback_id varchar(100),
 
+    wayback varchar(100),
     url_string varchar(2083) not null,
 
     foreign key (url_id) references urls(id),
