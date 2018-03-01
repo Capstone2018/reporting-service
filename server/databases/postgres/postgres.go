@@ -1,13 +1,15 @@
 package postgres
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	// import init for postgres
+	_ "github.com/lib/pq"
 )
 
 const maxConnRetries = 10
@@ -27,7 +29,7 @@ type Config struct {
 }
 
 // New creates a new Postgres instance
-func New(cfg Config) (db *sql.DB, err error) {
+func New(cfg Config) (db *sqlx.DB, err error) {
 	if cfg.Host == "" || cfg.Port == "" || cfg.User == "" ||
 		cfg.Password == "" || cfg.Database == "" {
 		err = errors.Errorf(
@@ -43,7 +45,8 @@ func New(cfg Config) (db *sql.DB, err error) {
 	conf := fmt.Sprintf(
 		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
 		cfg.User, cfg.Password, cfg.Database, cfg.Host, cfg.Port)
-	d, err := sql.Open("postgres", conf)
+
+	d, err := sqlx.Open("postgres", conf)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Couldn't open connection to postgre database (%s)",
