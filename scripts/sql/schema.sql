@@ -26,7 +26,7 @@ create table opengraph (
     description varchar(300),
     determiner varchar(5), 
     locale varchar(20),
-    locales_alternate varchar(100),
+    locales_alternate text[],
     images jsonb,
     audios jsonb,
     videos jsonb,
@@ -47,6 +47,32 @@ create table query_fragment (
     primary key(id)
 );
 
+create table reports (
+    id serial not null unique,
+    user_id integer not null,
+
+    user_description varchar(1024) not null,
+    created_at timestamp not null,
+
+    foreign key (user_id) references users(id),
+    
+    primary key (id)
+);
+
+create table report_types (
+    id serial not null unique,
+    type varchar(100) not null,
+
+    primary key (id)
+);
+
+create table report_types_reports (
+    report_id integer references reports(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    report_type_id integer references report_types(id) ON UPDATE CASCADE,
+    
+    constraint report_type_pkey primary key (report_id, report_type_id)
+);
+
 create table pages (
     id serial not null unique,
     created_at timestamp not null,
@@ -64,33 +90,5 @@ create table pages (
     foreign key (report_id) references reports(id),
     foreign key (query_fragment_id) references query_fragment(id),
 
-    primary key (id)
-);
-
-create table report_types (
-    id serial not null unique,
-    type varchar(100) not null,
-
-    primary key (id)
-);
-
-create table report_report_types (
-    report_id integer not null,
-    type_id integer not null,
-
-    foreign key report_id references reports(id),
-    foreign key report_type_id references report_types(id)
-);
-
-
-create table reports (
-    id serial not null unique,
-    user_id integer not null,
-
-    user_description varchar(1024) not null,
-    created_at timestamp not null,
-
-    foreign key (user_id) references users(id),
-    
     primary key (id)
 );

@@ -14,7 +14,7 @@ cd -
 
 echo "building mysql database"
 cd ./sql
-docker build -t aethan/mysqlreports .
+docker build -t aethan/postgresreports .
 cd -
 
 echo "pruning.."
