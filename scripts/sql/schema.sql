@@ -39,7 +39,7 @@ create table opengraph (
     primary key (id)
 );
 
-create table query_fragment (
+create table query_fragments (
     id serial not null unique,
     query varchar(25),
     fragment varchar(25),
@@ -88,7 +88,7 @@ create table pages (
     foreign key (url_id) references urls(id),
     foreign key (og_id) references opengraph(id), 
     foreign key (report_id) references reports(id),
-    foreign key (query_fragment_id) references query_fragment(id),
+    foreign key (query_fragment_id) references query_fragments(id),
 
     primary key (id)
 );

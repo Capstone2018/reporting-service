@@ -9,7 +9,6 @@ import (
 	"github.com/lib/pq"
 )
 
-//const insertIntoHostnames = `insert into hostnames(host) values($1)`
 const insertIntoURLs = `with s as (
 		select id, "host", "path"
 		from urls
@@ -25,14 +24,12 @@ const insertIntoURLs = `with s as (
 	union all
 	select id
 	from s`
-
-//const insertIntoQueryFragment = `insert into query_fragment(query, fragment) values($1,$2) returning id`
 const insertIntoQueryFragment = `with s as (
 	select id, "query", "fragment"
-	from urls
+	from query_fragments
 	where query = $1 and fragment = $2
 	), i as (
-		insert into urls ("query", "fragment")
+		insert into query_fragments ("query", "fragment")
 		select $1, $2
 		where not exists (select 1 from s)
 		returning id, "query", "fragment"
@@ -92,7 +89,7 @@ func (s *PostgreStore) Insert(page *Page) (*Page, error) {
 	// set the opengraph id
 	page.OpenGraph.ID = ogID
 
-	// insert into the URL
+	// insert into the urls table
 	var urlID int64
 	if err := tx.QueryRow(insertIntoURLs, page.URL.Hostname(),
 		page.URL.EscapedPath()).Scan(&urlID); err != nil {
@@ -107,6 +104,14 @@ func (s *PostgreStore) Insert(page *Page) (*Page, error) {
 		url.PathEscape(page.URL.Fragment)).Scan(&qfID); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("error inserting query_fragment: %v", err)
+	}
+
+	// finaly insert the page
+	var pID int64
+	if err := tx.QueryRow(insertIntoPage, page.CreatedAt, urlID, ogID, nil, qfID,
+		page.WaybackID, page.URL.String()).Scan(&pID); err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("error inserting page: %v", err)
 	}
 
 	//now commit the transaction so that all those inserts are atomic
