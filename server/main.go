@@ -9,7 +9,6 @@ import (
 	"github.com/Capstone2018/reporting-service/server/handlers"
 	"github.com/Capstone2018/reporting-service/server/models/pages"
 	"github.com/Capstone2018/reporting-service/server/models/reports"
-	_ "github.com/lib/pq"
 )
 
 const apiRoot = "/v1/"
@@ -32,11 +31,11 @@ func main() {
 	// redisAddr := getenv("REDISADDR", "localhost:6379")
 	// sessionsSigKey := getenv("SESSIONKEY", "")
 
-	psqlHost := getenv("PSQL_HOST", "localhost")
-	psqlPort := getenv("PSQL_PORT", "5432")
-	psqlUser := getenv("PSQL_USER", "admin")
-	psqlPassword := getenv("PSQL_PASSWORD", "")
-	psqlDatabase := getenv("PSQL_DB", "reports")
+	psqlHost := getenv("POSTGRES_HOST", "localhost")
+	psqlPort := getenv("POSTGRES_PORT", "5432")
+	psqlUser := getenv("POSTGRES_USER", "admin")
+	psqlPassword := getenv("POSTGRES_PASSWORD", "")
+	psqlDatabase := getenv("POSTGRES_DB", "reports")
 	// connect to the sql DB and create a new store
 	cfg := postgres.Config{
 		Host:     psqlHost,
@@ -65,6 +64,7 @@ func main() {
 
 	apiMux := http.NewServeMux()
 	apiMux.HandleFunc(apiRoot+"reports", hctx.ReportsHandler)
+	apiMux.HandleFunc(apiRoot+"pages", hctx.PagesHandler)
 	//apiMux.HandleFunc(apiRoot+"reports/", hctx.Authenticated(hctx.ReportIDHandler))
 	serverMux := http.NewServeMux()
 	serverMux.Handle(apiRoot, handlers.Adapt(apiMux,
