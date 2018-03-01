@@ -52,7 +52,7 @@ func (ctx *Context) PagesHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error fetching Opengraph: "+err.Error(), http.StatusInternalServerError)
 	}
 
-	// archive the url
+	// archive the url -- this is super slow and should be on it's own goroutine
 	a := pages.NewArchive()
 	if err := a.Archive(u.String()); err != nil {
 		http.Error(w, "error archiving url: "+err.Error(), http.StatusInternalServerError)

@@ -58,7 +58,7 @@ type PostgreStore struct {
 //NewPostgreStore constructs a PostgreStore
 func NewPostgreStore(db *sqlx.DB) *PostgreStore {
 	if db == nil {
-		panic("nil pointer passed to NewMySQLStore")
+		panic("nil pointer passed to pages.NewPostgreStore")
 	}
 
 	return &PostgreStore{
