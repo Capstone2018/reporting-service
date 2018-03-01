@@ -74,13 +74,7 @@ func (s *PostgreStore) Insert(page *Page) (*Page, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error begining transaction: %v", err)
 	}
-	// marshall the opengraph
-	// _, err := json.Marshal(page.OpenGraph)
-	// if err != nil {
-	// 	tx.Rollback()
-	// 	return nil, fmt.Errorf("error marshalling opengraph: %v", err)
-	// }
-	//var res sqlx.Result
+
 	// insert into opengraph
 	var ogID int64
 	if err := tx.QueryRow(insertIntoOG,
@@ -106,7 +100,8 @@ func (s *PostgreStore) Insert(page *Page) (*Page, error) {
 		return nil, fmt.Errorf("error inserting url: %v", err)
 	}
 
-	// insert into the query_fragment
+	// insert into the query_fragment,
+	// remember to escape the paths (though this is probably done by db)
 	var qfID int64
 	if err := tx.QueryRow(insertIntoQueryFragment, url.QueryEscape(page.URL.RawQuery),
 		url.PathEscape(page.URL.Fragment)).Scan(&qfID); err != nil {
