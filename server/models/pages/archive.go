@@ -9,29 +9,32 @@ import (
 
 const waybackURL = "https://pragma.archivelab.org"
 
-// Archive triggers the wayback machine to archive a url
-func Archive(pageURL string) (string, error) {
-	jsonReq := fmt.Sprintf(`{"url":"%s"}`, pageURL)
-	resp, err := http.Post(waybackURL, "application/json", strings.NewReader(jsonReq))
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body := &archiveResponse{}
-	if err = receive(resp, body); err != nil {
-		return "", err
-	}
-	return body.WaybackID, nil
-}
-
-type archiveResponse struct {
+// Archive represents a wayback archive
+type Archive struct {
 	ID           int    `json:"id"`
 	AnnotationID int    `json:"annotation_id"`
 	Protocol     string `json:"protocol"`
 	Domain       string `json:"domain"`
 	Path         string `json:"path"`
 	WaybackID    string `json:"wayback_id"`
+}
+
+// NewArchive returns a new instance of an Archive struct
+func NewArchive() *Archive {
+	return &Archive{}
+}
+
+// Archive triggers the wayback machine to archive a url
+func (a *Archive) Archive(pageURL string) error {
+	jsonReq := fmt.Sprintf(`{"url":"%s"}`, pageURL)
+	resp, err := http.Post(waybackURL, "application/json", strings.NewReader(jsonReq))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	err = receive(resp, a)
+	return err
 }
 
 func receive(r *http.Response, target interface{}) error {

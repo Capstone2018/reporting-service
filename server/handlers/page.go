@@ -23,12 +23,13 @@ func (ctx *Context) PagesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// validate the url
+	// validate the url (use ParseRequestURI first so we can make sure that it's not relative path)
 	u, err := url.ParseRequestURI(pageURL)
 	if err != nil {
 		http.Error(w, "invalid url: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	// Parse the url so we can keep the query fragment
 	u, err = url.Parse(pageURL)
 	if err != nil {
 		http.Error(w, "invalid url: "+err.Error(), http.StatusBadRequest)
@@ -51,6 +52,12 @@ func (ctx *Context) PagesHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error fetching Opengraph: "+err.Error(), http.StatusInternalServerError)
 	}
 
+	// archive the url
+	a := pages.NewArchive()
+	if err := a.Archive(u.String()); err != nil {
+		http.Error(w, "error archiving url: "+err.Error(), http.StatusInternalServerError)
+	}
+
 	// TODO: remove this, object replacement
 	og = &pages.OpenGraph{
 		CreatedAt:        time.Now(),
@@ -59,14 +66,17 @@ func (ctx *Context) PagesHandler(w http.ResponseWriter, r *http.Request) {
 		LocalesAlternate: []string{"french", "english", "latin"},
 		Images:           []*pages.Image{&pages.Image{URL: "http://google.com", SecureURL: "https://google.com", Type: "uh"}},
 	}
-	// enter a row in the database for the page
 
+	// enter a row in the database for the page TODO: decide if we should separate this into
+	// seperate interface methods????
 	np := &pages.Page{
 		CreatedAt: time.Now(),
 		URL:       u,
 		URLString: u.String(),
 		OpenGraph: og,
+		WaybackID: a.WaybackID,
 	}
+
 	p, err := ctx.PageStore.Insert(np)
 	if err != nil {
 		http.Error(w, "error inserting page: "+err.Error(), http.StatusInternalServerError)
