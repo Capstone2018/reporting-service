@@ -1,16 +1,16 @@
 package reports
 
 import (
-	"database/sql"
+	"github.com/jmoiron/sqlx"
 )
 
 //PostgreStore implements Store for a Postgres database
 type PostgreStore struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 //NewPostgreStore constructs a PostgreStore
-func NewPostgreStore(db *sql.DB) *PostgreStore {
+func NewPostgreStore(db *sqlx.DB) *PostgreStore {
 	if db == nil {
 		panic("nil pointer passed to NewMySQLStore")
 	}
