@@ -1,6 +1,8 @@
 package pages
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
@@ -10,73 +12,169 @@ import (
 // OpenGraph represents opengraph protocol properties,
 // describes objects in the semantic web
 type OpenGraph struct {
-	CreatedAt        time.Time `json:"created_at"`
-	ID               int64     `json:"id"`
-	Title            string    `json:"title,omitempty"`
-	Type             string    `json:"type,omitempty"`
-	URL              string    `json:"url,omitempty"`
-	Description      string    `json:"description,omitempty"`
-	Determiner       string    `json:"determiner,omitempty"`
-	SiteName         string    `json:"siteName,omitempty"`
-	Locale           string    `json:"locale,omitempty"`
-	LocalesAlternate []string  `json:"localesAlternate,omitempty"`
-	Images           []*Image  `json:"images,omitempty"`
-	Audios           []*Audio  `json:"audios,omitempty"`
-	Videos           []*Video  `json:"videos,omitempty"`
-	Article          *Article  `json:"article,omitempty"`
-	Book             *Book     `json:"book,omitempty"`
-	Profile          *Profile  `json:"profile,omitempty"`
+	CreatedAt        time.Time  `json:"created_at" db:"created_at"`
+	ID               int64      `json:"id" db:"id"`
+	Title            string     `json:"title,omitempty" db:"title"`
+	Type             string     `json:"type,omitempty" db:"type"`
+	URL              string     `json:"url,omitempty" db:"url"`
+	Description      string     `json:"description,omitempty" db:"description"`
+	Determiner       string     `json:"determiner,omitempty" db:"determiner"`
+	SiteName         string     `json:"siteName,omitempty" db:"siteName"`
+	Locale           string     `json:"locale,omitempty" db:"locale"`
+	LocalesAlternate []string   `json:"locales_alternate,omitempty" db:"locales_alternate"`
+	Images           ImageSlice `json:"images,omitempty" db:"images"`
+	Audios           []*Audio   `json:"audios,omitempty" db:"audios"`
+	Videos           []*Video   `json:"videos,omitempty" db:"videos"`
+	Article          *Article   `json:"article,omitempty" db:"article"`
+	Book             *Book      `json:"book,omitempty" db:"book"`
+	Profile          *Profile   `json:"profile,omitempty" db:"profile"`
+}
+
+// Value implements driver Valuer interface
+func (og OpenGraph) Value() (driver.Value, error) {
+	j, err := json.Marshal(og)
+	return j, err
 }
 
 // Image defines Open Graph Image type
 type Image struct {
-	URL       string `json:"url"`
-	SecureURL string `json:"secureUrl"`
-	Type      string `json:"type"`
-	Width     uint64 `json:"width"`
-	Height    uint64 `json:"height"`
+	URL       string `json:"url" db:"url"`
+	SecureURL string `json:"secure_url" db:"secure_url"`
+	Type      string `json:"type" db:"type"`
+	Width     uint64 `json:"width" db:"width"`
+	Height    uint64 `json:"height" db:"height"`
+}
+
+// Value implements driver Valuer interface
+func (i Image) Value() (driver.Value, error) {
+	j, err := json.Marshal(i)
+	return j, err
+}
+
+// ImageSlice is a slice of pointers to image
+type ImageSlice []*Image
+
+// Value implements driver Valuer interface
+func (i ImageSlice) Value() (driver.Value, error) {
+	j, err := json.Marshal(i)
+	return j, err
 }
 
 // Video defines Open Graph Video type
 type Video struct {
-	URL       string `json:"url"`
-	SecureURL string `json:"secureUrl"`
-	Type      string `json:"type"`
-	Width     uint64 `json:"width"`
-	Height    uint64 `json:"height"`
+	URL       string `json:"url" db:"url"`
+	SecureURL string `json:"secureUrl" db:"video"`
+	Type      string `json:"type" db:"type"`
+	Width     uint64 `json:"width" db:"width"`
+	Height    uint64 `json:"height" db:"height"`
+}
+
+// Value implements driver Valuer interface
+func (v Video) Value() (driver.Value, error) {
+	j, err := json.Marshal(v)
+	return j, err
+}
+
+//VideoSlice allows us to marshall structs when inserting into the database
+type VideoSlice []*Video
+
+// Value implements driver Valuer interface
+func (v VideoSlice) Value() (driver.Value, error) {
+	j, err := json.Marshal(v)
+	return j, err
 }
 
 // Audio defines Open Graph Audio Type
 type Audio struct {
-	URL       string `json:"url"`
-	SecureURL string `json:"secureUrl"`
-	Type      string `json:"type"`
+	URL       string `json:"url" db:"url"`
+	SecureURL string `json:"secure_url" db:"secure_url"`
+	Type      string `json:"type" db:"type"`
+}
+
+// Value implements driver Valuer interface
+func (a Audio) Value() (driver.Value, error) {
+	j, err := json.Marshal(a)
+	return j, err
+}
+
+// AudioSlice allows us to insert jsonb
+type AudioSlice []*Audio
+
+// Value implements driver Valuer interface
+func (a AudioSlice) Value() (driver.Value, error) {
+	j, err := json.Marshal(a)
+	return j, err
 }
 
 // Article represents opengraph article properties
 type Article struct {
-	Authors        []*Profile `json:"authors"`
-	PublishedTime  time.Time  `json:"publishedTime"`
-	ModifiedTime   time.Time  `json:"modifiedTime"`
-	ExpirationTime time.Time  `json:"expirationTime"`
-	Section        string     `json:"section"`
-	Tags           []string   `json:"tags"`
+	Authors        []*Profile `json:"authors" db:"authors"`
+	PublishedTime  time.Time  `json:"published_time" db:"published_time"`
+	ModifiedTime   time.Time  `json:"modified_time" db:"modified_time"`
+	ExpirationTime time.Time  `json:"expiration_time" db:"expiration_time"`
+	Section        string     `json:"section" db:"section"`
+	Tags           []string   `json:"tags" db:"tags"`
+}
+
+// Value implements driver Valuer interface
+func (a Article) Value() (driver.Value, error) {
+	j, err := json.Marshal(a)
+	return j, err
+}
+
+//ArticleSlice allows us to insert jsonb
+type ArticleSlice []*Article
+
+// Value implements driver Valuer interface
+func (a ArticleSlice) Value() (driver.Value, error) {
+	j, err := json.Marshal(a)
+	return j, err
 }
 
 // Profile contains Open Graph Profile structure
 type Profile struct {
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Username  string `json:"username"`
-	Gender    string `json:"gender"`
+	FirstName string `json:"first_name" db:"first_name"`
+	LastName  string `json:"last_name" db:"last_name"`
+	Username  string `json:"username" db:"username"`
+	Gender    string `json:"gender" db:"gender"`
+}
+
+// Value implements driver Valuer interface
+func (p Profile) Value() (driver.Value, error) {
+	j, err := json.Marshal(p)
+	return j, err
+}
+
+// ProfileSlice allows us to insert jsonb
+type ProfileSlice []*Profile
+
+// Value implements driver Valuer interface
+func (p ProfileSlice) Value() (driver.Value, error) {
+	j, err := json.Marshal(p)
+	return j, err
 }
 
 // Book contains Open Graph Book structure
 type Book struct {
-	ISBN        string     `json:"isbn"`
-	ReleaseDate *time.Time `json:"releaseDate"`
-	Tags        []string   `json:"tags"`
-	Authors     []*Profile `json:"authors"`
+	ISBN        string     `json:"isbn" db:"isbn"`
+	ReleaseDate *time.Time `json:"release_date" db:"release_date"`
+	Tags        []string   `json:"tags" db:"tags"`
+	Authors     []*Profile `json:"authors" db:"authors"`
+}
+
+// Value implements driver Valuer interface
+func (b Book) Value() (driver.Value, error) {
+	j, err := json.Marshal(b)
+	return j, err
+}
+
+// BookSlice is a slice of Books
+type BookSlice []*Book
+
+// Value implements driver Valuer interface
+func (b BookSlice) Value() (driver.Value, error) {
+	j, err := json.Marshal(b)
+	return j, err
 }
 
 // NewOpenGraph returns new instance of Open Graph structure
@@ -88,7 +186,6 @@ func NewOpenGraph() *OpenGraph {
 
 // ProcessStream parses an HTML stream to generate opengraph properties from it
 func (og *OpenGraph) ProcessStream(pageURL string, htmlStream io.ReadCloser) error {
-
 	return nil
 }
 

@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/Capstone2018/reporting-service/server/models/pages"
 )
 
-// PageHandler handles the /page resource
-func (ctx *Context) PageHandler(w http.ResponseWriter, r *http.Request) {
+// PagesHandler handles the /pages resource
+func (ctx *Context) PagesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "method must be GET", http.StatusBadRequest)
 		return
@@ -22,29 +23,60 @@ func (ctx *Context) PageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// validate the url
+	u, err := url.ParseRequestURI(pageURL)
+	if err != nil {
+		http.Error(w, "invalid url: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	u, err = url.Parse(pageURL)
+	if err != nil {
+		http.Error(w, "invalid url: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// TODO: figure out if we should quit if the url fetching broke
 	// fetch the page so we can parse it
-	body, err := fetchHTML(pageURL)
+	body, err := fetchHTML(u.String())
 	if err != nil {
 		http.Error(w, "error fetching URL: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	defer body.Close()
 
-	// enter a row in the database for the page
-	np := &pages.Page{
-		CreatedAt: time.Now(),
-		URLString: pageURL,
-	}
-	p, err := ctx.PageStore.Insert(np)
-	fmt.Println(p.ID)
-	// write to message queue (for python workers)
-
 	// get the opengraph
 	og := pages.NewOpenGraph()
-	if err := og.ProcessStream(pageURL, body); err != nil {
-
+	if err := og.ProcessStream(u.String(), body); err != nil {
+		// don't quit, we still want to store the page, but just insert a null
+		http.Error(w, "error fetching Opengraph: "+err.Error(), http.StatusInternalServerError)
 	}
 
+	// TODO: remove this, object replacement
+	og = &pages.OpenGraph{
+		CreatedAt:        time.Now(),
+		Title:            "test",
+		Description:      "blah blah blah",
+		LocalesAlternate: []string{"french", "english", "latin"},
+		Images:           []*pages.Image{&pages.Image{URL: "http://google.com", SecureURL: "https://google.com", Type: "uh"}},
+	}
+	// enter a row in the database for the page
+
+	np := &pages.Page{
+		CreatedAt: time.Now(),
+		URL:       u,
+		URLString: u.String(),
+		OpenGraph: og,
+	}
+	p, err := ctx.PageStore.Insert(np)
+	if err != nil {
+		http.Error(w, "error inserting page: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// concurrently? write to message queue (for python workers)
+
+	// write the page back to the user
+	respond(w, p, http.StatusCreated)
 }
 
 var client = &http.Client{
