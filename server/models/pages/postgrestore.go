@@ -3,7 +3,6 @@ package pages
 import (
 	"fmt"
 	"log"
-	"net/url"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -100,15 +99,15 @@ func (s *PostgreStore) Insert(page *Page) (*Page, error) {
 	// insert into the query_fragment,
 	// remember to escape the paths (though this is probably done by db)
 	var qfID int64
-	if err := tx.QueryRow(insertIntoQueryFragment, url.QueryEscape(page.URL.RawQuery),
-		url.PathEscape(page.URL.Fragment)).Scan(&qfID); err != nil {
+	if err := tx.QueryRow(insertIntoQueryFragment, page.Query,
+		page.Fragment).Scan(&qfID); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("error inserting query_fragment: %v", err)
 	}
 
 	// finaly insert the page
 	var pID int64
-	if err := tx.QueryRow(insertIntoPage, page.CreatedAt, urlID, ogID, nil, qfID,
+	if err := tx.QueryRow(insertIntoPage, page.CreatedAt, urlID, ogID, page.ReportID, qfID,
 		page.WaybackID, page.URL.String()).Scan(&pID); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("error inserting page: %v", err)
