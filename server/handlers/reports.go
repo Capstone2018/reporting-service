@@ -2,62 +2,24 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"net/url"
+	"time"
 
+	"github.com/Capstone2018/reporting-service/server/models/pages"
 	"github.com/Capstone2018/reporting-service/server/models/reports"
 )
 
-// type pageMeta struct {
-// 	URL       *url.URL
-// 	OpenGraph *OpenGraph
-// 	WaybackID string
-// }
-
 // ReportsHandler handles the /reports resource
 func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: add in querying ability
+	// TODO: add in querying ability? or is this on its own service
 	if r.Method != "POST" {
 		http.Error(w, "method must be POST", http.StatusBadRequest)
 		return
 	}
 
 	switch r.Method {
-	// get reports with query string
-	case "GET":
-		// // TODO: write authentication logic.. (currently you just need to be signed in to access this -- so anyone with an account)
-		// // who is allowed to query the reports from the database?
-		// host := strings.ToLower(r.FormValue("host"))
-		// url := strings.ToLower(r.FormValue("url"))
-		// if len(host) == 0 && len(url) == 0 {
-		// 	// return all the reports in the database
-		// 	reports, err := ctx.ReportsStore.GetAll()
-		// 	if err != nil {
-		// 		http.Error(w, fmt.Sprintf("error getting all reports: %v", err), http.StatusInternalServerError)
-		// 		return
-		// 	}
-		// 	respond(w, reports, http.StatusOK)
-		// } else {
-		// 	if len(host) != 0 && len(url) != 0 {
-		// 		http.Error(w, "can't provide both url and host query", http.StatusBadRequest)
-		// 		return
-		// 	}
-		// 	// do host database query
-		// 	if len(host) != 0 {
-		// 		reports, err := ctx.ReportsStore.GetByHost(host)
-		// 		if err != nil {
-		// 			http.Error(w, fmt.Sprintf("error querying by host name: %v", err), http.StatusInternalServerError)
-		// 			return
-		// 		}
-		// 		respond(w, reports, http.StatusOK)
-		// 	} else { // do url database query
-		// 		reports, err := ctx.ReportsStore.GetByURL(host)
-		// 		if err != nil {
-		// 			http.Error(w, fmt.Sprintf("error querying by url: %v", err), http.StatusInternalServerError)
-		// 			return
-		// 		}
-		// 		respond(w, reports, http.StatusOK)
-		// 	}
-		// }
 	// post new report to the db
 	case "POST":
 		// create an empty report struct and decode a json response to it
@@ -68,71 +30,77 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// convert the new report to a report
+		// this validates the urls sent and discards invalid urls - not throwing error in that case
 		report, err := nr.ToReport()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("error converting new report: %v", err), http.StatusBadRequest)
 			return
 		}
-		// meta := make([]*pageMeta, len(report.URLs))
 
-		// // archive and get the opengraph properties for the submitted URLs
-		// for _, u := range report.URLs {
-		// 	pm := new(pageMeta)
-		// 	pm.URL = u
-
-		// 	// archive the page URL
-		// 	waybackID, err := reports.Archive(u.String())
-		// 	if err != nil {
-		// 		log.Printf("unable to archive URL: %v", err)
-		// 	} else {
-		// 		pm.WaybackID = waybackID
-		// 	}
-		// 	// process the opengraph
-		// 	og := NewOpenGraph()
-		// 	err = og.ProcessURL(u.String())
-		// 	if err != nil {
-		// 		log.Printf("unable to process opengraph from URL: %v", err)
-		// 	} else {
-		// 		pm.OpenGraph = og
-		// 	}
-		// 	// add the page metadata to the slice
-		// 	meta = append(meta, pm)
-		//}
-
-		// write the report to the database
-		r, err := ctx.ReportsStore.Insert(report)
+		// insert a new report, get the returned report id
+		report, err = ctx.ReportsStore.Insert(report)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("error saving new report: %v", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("error inserting new report: %v", err), http.StatusInternalServerError)
 			return
 		}
 
-		respond(w, r, http.StatusCreated)
+		// handle each url -- opengraph, archive and page insertion
+		for _, url := range report.URLs {
+			//TODO: decide level of error reporting??? do we want to report to the user that their url wasn't saved properly?
+			go ctx.handlePage(url, report.ID)
+		}
+
+		respond(w, report, http.StatusCreated)
 	}
 }
 
-// // ReportIDHandler handles the /users/<report-id> resource
-// func (ctx *Context) ReportIDHandler(w http.ResponseWriter, r *http.Request, sessState *SessionState) {
-// 	// TODO: ensure authentication
+// handlePage parses the metadata of a url's "page" and inserts it into the database
+func (ctx *Context) handlePage(u *url.URL, reportID int64) {
+	// archive the url -- TODO: this is super slow and should be on it's own goroutine?
+	a := pages.NewArchive()
+	if err := a.Archive(u.String()); err != nil {
+		log.Printf("Error archiving url: %v", u.String())
+	}
+	// TODO: figure out if we should quit if the url fetching broke
+	// fetch the page so we can parse it
+	body, err := fetchHTML(u.String())
+	if err != nil {
+		log.Printf("error fetching url: %v", u.String())
+		return
+	}
+	defer body.Close()
 
-// 	// TODO: decide if a person can edit their report..
-// 	if r.Method != "GET" {
-// 		http.Error(w, "method must be GET", http.StatusBadRequest)
-// 		return
-// 	}
-// 	// get the report ID and query the database
-// 	_, idString := path.Split(r.URL.Path)
-// 	// make sure that the user passed in an integer
-// 	reportID, err := strconv.ParseInt(idString, 10, 64)
-// 	if err != nil {
-// 		http.Error(w, fmt.Sprintf("id must be an integer: %v", err), http.StatusBadRequest)
-// 		return
-// 	}
+	// fetch the opengraph
+	// get the opengraph
+	og := pages.NewOpenGraph()
+	if err := og.ProcessStream(u.String(), body); err != nil {
+		// don't quit, we still want to store the page, but just insert a null opengraph
+		log.Printf("error processing opengraph: %v, err: %v", u.String(), err.Error())
+	}
 
-// 	// query db and write the report back to the user
-// 	report, err := ctx.ReportsStore.GetByID(reportID)
-// 	if err != nil {
-// 		http.Error(w, fmt.Sprintf("error querying by id: %v", err), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	respond(w, report, http.StatusOK)
-// }
+	// TODO: remove this, object replacement
+	og = &pages.OpenGraph{
+		CreatedAt:        time.Now(),
+		Title:            "test",
+		Description:      "blah blah blah",
+		LocalesAlternate: []string{"french", "english", "latin"},
+		Images:           []*pages.Image{&pages.Image{URL: "http://google.com", SecureURL: "https://google.com", Type: "uh"}},
+	}
+
+	// insert the page into the database
+	np := &pages.Page{
+		CreatedAt: time.Now(),
+		URL:       u,
+		URLString: u.String(),
+		OpenGraph: og,
+		WaybackID: a.WaybackID,
+		ReportID:  reportID,
+		Query:     url.QueryEscape(u.RawQuery),
+		Fragment:  url.PathEscape(u.Fragment),
+	}
+
+	_, err = ctx.PageStore.Insert(np)
+	if err != nil {
+		log.Printf("error storing new page from: %v", np.URLString)
+	}
+}

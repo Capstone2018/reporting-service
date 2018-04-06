@@ -5,9 +5,14 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const waybackURL = "https://pragma.archivelab.org"
+
+var client = &http.Client{
+	Timeout: time.Second * 30,
+}
 
 // Archive represents a wayback archive
 type Archive struct {
@@ -27,7 +32,7 @@ func NewArchive() *Archive {
 // Archive triggers the wayback machine to archive a url
 func (a *Archive) Archive(pageURL string) error {
 	jsonReq := fmt.Sprintf(`{"url":"%s"}`, pageURL)
-	resp, err := http.Post(waybackURL, "application/json", strings.NewReader(jsonReq))
+	resp, err := client.Post(waybackURL, "application/json", strings.NewReader(jsonReq))
 	if err != nil {
 		return err
 	}
