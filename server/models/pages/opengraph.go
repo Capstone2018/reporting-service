@@ -23,8 +23,8 @@ type OpenGraph struct {
 	Locale           string     `json:"locale,omitempty" db:"locale"`
 	LocalesAlternate []string   `json:"locales_alternate,omitempty" db:"locales_alternate"`
 	Images           ImageSlice `json:"images,omitempty" db:"images"`
-	Audios           []*Audio   `json:"audios,omitempty" db:"audios"`
-	Videos           []*Video   `json:"videos,omitempty" db:"videos"`
+	Audios           AudioSlice `json:"audios,omitempty" db:"audios"`
+	Videos           VideoSlice `json:"videos,omitempty" db:"videos"`
 	Article          *Article   `json:"article,omitempty" db:"article"`
 	Book             *Book      `json:"book,omitempty" db:"book"`
 	Profile          *Profile   `json:"profile,omitempty" db:"profile"`
