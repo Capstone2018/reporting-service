@@ -36,7 +36,8 @@ func main() {
 	psqlUser := getenv("POSTGRES_USER", "admin")
 	psqlPassword := getenv("POSTGRES_PASSWORD", "")
 	psqlDatabase := getenv("POSTGRES_DB", "reports")
-	// connect to the sql DB and create a new store
+
+	// connect to the psql DB
 	cfg := postgres.Config{
 		Host:     psqlHost,
 		Port:     psqlPort,
@@ -44,13 +45,14 @@ func main() {
 		Password: psqlPassword,
 		Database: psqlDatabase,
 	}
-	db, err := postgres.New(cfg)
+	db, err := postgres.Connect(cfg)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
 
 	// remember to close the database TODO: abstract this method to check error
 	defer db.Close()
+	// create a new store for reports and pages
 	reportStore := reports.NewPostgreStore(db)
 	pageStore := pages.NewPostgreStore(db)
 
@@ -64,7 +66,6 @@ func main() {
 
 	apiMux := http.NewServeMux()
 	apiMux.HandleFunc(apiRoot+"reports", hctx.ReportsHandler)
-	apiMux.HandleFunc(apiRoot+"pages", hctx.PagesHandler)
 	//apiMux.HandleFunc(apiRoot+"reports/", hctx.Authenticated(hctx.ReportIDHandler))
 	serverMux := http.NewServeMux()
 	serverMux.Handle(apiRoot, handlers.Adapt(apiMux,
