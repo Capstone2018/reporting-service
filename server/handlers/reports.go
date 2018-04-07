@@ -101,6 +101,6 @@ func (ctx *Context) handlePage(u *url.URL, reportID int64) {
 
 	_, err = ctx.PageStore.Insert(np)
 	if err != nil {
-		log.Printf("error storing new page from: %v", np.URLString)
+		log.Printf("error storing new page from: %v, %v", np.URLString, err)
 	}
 }

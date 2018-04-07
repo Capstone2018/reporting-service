@@ -2,6 +2,8 @@ package reports
 
 import (
 	"fmt"
+	"log"
+	"net/url"
 	"time"
 )
 
@@ -14,18 +16,18 @@ type page struct {
 type NewReport struct {
 	Email           string   `json:"email"`
 	UserDescription string   `json:"user_description"`
-	Pages           []page   `json:"pages"`
+	URLs            []string `json:"urls"`
 	ReportTypes     []string `json:"report_types"`
 }
 
 // Report represents a fully validated report
 type Report struct {
-	ID              int64     `json:"id"`
-	Email           string    `json:"email"`
-	UserDescription string    `json:"user_description"`
-	Pages           []page    `json:"pages"`
-	ReportTypes     []string  `json:"report_types"`
-	CreatedAt       time.Time `json:"created_at"`
+	ID              int64      `json:"id"`
+	Email           string     `json:"email"`
+	UserDescription string     `json:"user_description"`
+	URLs            []*url.URL `json:"urls"`
+	ReportTypes     []string   `json:"report_types"`
+	CreatedAt       time.Time  `json:"created_at"`
 }
 
 // Validate checks that a new report is valid
@@ -56,13 +58,35 @@ func (nr *NewReport) ToReport() (*Report, error) {
 		return nil, err
 	}
 
+	// create a report with the current time, etc
 	report := &Report{
 		UserDescription: nr.UserDescription,
-		Pages:           nr.Pages,
 		Email:           nr.Email,
 		ReportTypes:     nr.ReportTypes,
 		CreatedAt:       time.Now(),
 	}
+	urls := make(map[string]bool)
+	// validate the URLs
+	for _, pageURL := range nr.URLs {
+		// check if url is dupe
+		if urls[pageURL] {
+			log.Printf("user submitted duplicate url: %v", pageURL)
+			continue
+		}
+		urls[pageURL] = true
+		// validate the url (use ParseRequestURI first so we can make sure that it's not relative path)
+		_, err := url.ParseRequestURI(pageURL)
+		if err != nil {
+			log.Printf("invalid url: %v sent from user", pageURL)
+			continue
+		}
+		u, err := url.Parse(pageURL)
+		if err != nil {
+			log.Printf("error parsing URL: %v", pageURL)
+			continue
+		}
+		report.URLs = append(report.URLs, u)
 
+	}
 	return report, nil
 }
