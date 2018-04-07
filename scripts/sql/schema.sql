@@ -1,7 +1,7 @@
 -- schema for reporting db
 create table users (
     id serial not null unique,
-    email varchar(2083) not null,
+    email varchar(2083) not null unique,
     count integer not null,
     primary key (id)
 );
@@ -49,7 +49,7 @@ create table query_fragments (
 
 create table reports (
     id serial not null unique,
-    user_id integer not null,
+    user_id integer,
 
     user_description varchar(1024) not null,
     created_at timestamp not null,
@@ -61,7 +61,7 @@ create table reports (
 
 create table report_types (
     id serial not null unique,
-    type varchar(100) not null,
+    type varchar(100) not null unique,
 
     primary key (id)
 );
