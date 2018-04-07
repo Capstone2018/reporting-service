@@ -12,7 +12,7 @@ echo "cleaning up reporting service.."
 go clean
 cd -
 
-echo "building mysql database"
+echo "building postgres database"
 cd ./sql
 docker build -t aethan/postgresreports .
 cd -
