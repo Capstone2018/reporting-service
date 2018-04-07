@@ -28,8 +28,9 @@ type Config struct {
 	Database string
 }
 
-// New creates a new Postgres instance
-func New(cfg Config) (db *sqlx.DB, err error) {
+// Open opens a new db connection to a postgres instance
+// Abstracted without attempting to ping for faster tests without retry
+func Open(cfg Config) (db *sqlx.DB, err error) {
 	if cfg.Host == "" || cfg.Port == "" || cfg.User == "" ||
 		cfg.Password == "" || cfg.Database == "" {
 		err = errors.Errorf(
@@ -37,7 +38,6 @@ func New(cfg Config) (db *sqlx.DB, err error) {
 			spew.Sdump(cfg))
 		return
 	}
-	//p.cfg = cfg
 	// The first argument corresponds to the driver name that the driver
 	// (in this case, `lib/pq`) used to register itself in `database/sql`.
 	// The next argument specifies the parameters to be used in the connection.
@@ -46,13 +46,26 @@ func New(cfg Config) (db *sqlx.DB, err error) {
 		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
 		cfg.User, cfg.Password, cfg.Database, cfg.Host, cfg.Port)
 
-	d, err := sqlx.Open("postgres", conf)
+	db, err = sqlx.Open("postgres", conf)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Couldn't open connection to postgre database (%s)",
 			spew.Sdump(cfg))
 		return
 	}
+
+	return
+}
+
+// Connect connects to a Postgres instance
+func Connect(cfg Config) (db *sqlx.DB, err error) {
+	// Open the connection
+	d, err := Open(cfg)
+	// if we got an error don't try and ping (nil pointer?)
+	if err != nil {
+		return
+	}
+	// retry logic to wait for the database to initialize
 	for i := 1; i < maxConnRetries; i++ {
 		err = d.Ping()
 		// return if we don't find an error
@@ -60,7 +73,7 @@ func New(cfg Config) (db *sqlx.DB, err error) {
 			db = d
 			return
 		}
-		log.Printf("error connecting to DB server at %s: %s", conf, err)
+		log.Printf("error connecting to DB server at %s: %s", spew.Sdump(cfg), err)
 		log.Printf("will attempt another connection in %d seconds", i*2)
 		time.Sleep(time.Duration(i*2) * time.Second)
 	}
@@ -69,6 +82,45 @@ func New(cfg Config) (db *sqlx.DB, err error) {
 	err = errors.Wrapf(err,
 		"Couldn't ping postgre database (%s)",
 		spew.Sdump(cfg))
+	return
+}
+
+// initialize a new database called test
+func initTestDB(db *sqlx.DB) (err error) {
+	// crete a test database
+	if _, err = db.Exec(`create database test with template reporting`); err != nil {
+		err = errors.Wrap(err,
+			"Couldn't create test database from template reporting database")
+		return
+	}
+	return
+}
+
+// TestConnect returns a postgres connection and creates a test db to test against
+func TestConnect(cfg Config) (db *sqlx.DB, err error) {
+	// Open the connection
+	d, err := Open(cfg)
+	// don't attempt to ping
+	if err != nil {
+		return
+	}
+	// attempt a ping
+	err = d.Ping()
+	// initialize a new test database with tables from 'reporting db
+	if err == nil {
+		initTestDB(d)
+		db = d
+		return
+	}
+	// otherwise return an error
+	err = errors.Wrapf(err,
+		"Couldn't ping postgre database (%s)",
+		spew.Sdump(cfg))
+	return
+}
+
+// TestClose tears down a test database connection
+func TestClose() (err error) {
 	return
 }
 
