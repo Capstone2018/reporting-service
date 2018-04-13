@@ -4,6 +4,8 @@ tls
 # ignore server binary
 server/server
 
+# ignore dev environment
+scripts/devenv.sh
 # Binaries for programs and plugins
 *.exe
 *.dll
