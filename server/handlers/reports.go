@@ -56,7 +56,7 @@ func (ctx *Context) ReportsHandler(w http.ResponseWriter, r *http.Request) {
 
 // handlePage parses the metadata of a url's "page" and inserts it into the database
 func (ctx *Context) handlePage(u *url.URL, reportID int64) {
-	// archive the url -- TODO: this is super slow and should be on it's own goroutine?
+	// archive the url
 	a := pages.NewArchive()
 	if err := a.Archive(u.String()); err != nil {
 		log.Printf("Error archiving url: %v", u.String())
@@ -76,15 +76,6 @@ func (ctx *Context) handlePage(u *url.URL, reportID int64) {
 	if err := og.ProcessStream(u.String(), body); err != nil {
 		// don't quit, we still want to store the page, but just insert a null opengraph
 		log.Printf("error processing opengraph: %v, err: %v", u.String(), err.Error())
-	}
-
-	// TODO: remove this, object replacement
-	og = &pages.OpenGraph{
-		CreatedAt:        time.Now(),
-		Title:            "test",
-		Description:      "blah blah blah",
-		LocalesAlternate: []string{"french", "english", "latin"},
-		Images:           []*pages.Image{&pages.Image{URL: "http://google.com", SecureURL: "https://google.com", Type: "uh"}},
 	}
 
 	// insert the page into the database

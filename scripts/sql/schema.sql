@@ -27,6 +27,7 @@ create table opengraph (
     determiner varchar(5), 
     locale varchar(20),
     locales_alternate text[],
+    icon jsonb,
     images jsonb,
     audios jsonb,
     videos jsonb,
