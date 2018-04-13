@@ -10,65 +10,70 @@ if [ -z "$(docker network ls --filter name=$netname --quiet)" ]; then
     docker network create $netname
 fi
 
-if [ "$(docker ps -aq --filter name=mysql)" ]; then
-    docker rm -f mysql
+if [ "$(docker ps -aq --filter name=postgres)" ]; then
+    docker rm -f postgres
 fi
 
 if [ "$(docker ps -aq --filter name=reporting-service)" ]; then
     docker rm -f reporting-service
 fi
 
-if [ "$(docker ps -aq --filter name=redis)" ]; then
-    docker rm -f redis
-fi
+# if [ "$(docker ps -aq --filter name=redis)" ]; then
+#     docker rm -f redis
+# fi
 
 mkdir -p /tls
 openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -subj "/CN=localhost" -keyout /tls/privkey.pem -out /tls/fullchain.pem
 
 
-docker run -d \
---name redis \
---network $netname \
-redis
+# docker run -d \
+# --name redis \
+# --network $netname \
+# redis
 
 
 # docker container image name for reporting service
 REPORTING_SERVICE_IMAGE=aethan/reporting-service
 
-# docker container image name for our customized MySQL image
-REPORTING_MYSQL_IMAGE=aethan/mysqlreports
+# docker container image name for our customized postgres image
+REPORTING_POSTGRES_IMAGE=aethan/postgresreports
+
+# database user which will be used to create schema
+POSTGRES_USER=admin
 
 # database name in which our schema will be created
-MYSQL_DATABASE=reporting
+POSTGRES_DB=reporting
 
 # random MySQL root password 
 # use $(openssl rand -base64 18) in prod
-MYSQL_ROOT_PASSWORD=supersecret 
+POSTGRES_PASSWORD=supersecret 
 
-MYSQL_ADDR=mysql:3306
+POSTGRES_HOST=devpsql
+POSTGRES_PORT=5432
+
+# create a postgres database
+docker run -d \
+--name postgres \
+--network $netname \
+-p 5432:5432 \
+-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+-e POSTGRES_USER=$POSTGRES_USER \
+-e POSTGRES_DB=$POSTGRES_DB \
+$REPORTING_POSTGRES_IMAGE
 
 docker run -d \
---name mysql \
+--name reporting \
 --network $netname \
--p 3306:3306 \
--e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
--e MYSQL_DATABASE=$MYSQL_DATABASE \
-$REPORTING_MYSQL_IMAGE --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-
-docker run -d \
---name reporting-service \
---network $netname \
--p 443:443 \
---restart always \
--v /tls:/tls:ro \
--e ADDR=:443 \
+-p 4040:4040 \
+-v $(pwd)/../server/tls:/tls:ro \
+-e ADDR=:4040 \
 -e TLSKEY=/tls/privkey.pem \
 -e TLSCERT=/tls/fullchain.pem \
--e SESSIONKEY=$(uuidgen) \
--e REDISADDR=redis:6379 \
--e MYSQL_ADDR=mysql:3306 \
--e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
--e MYSQL_DATABASE=reporting \
+-e POSTGRES_HOST=$POSTGRES_HOST \
+-e POSTGRES_PORT=$POSTGRES_PORT \
+-e POSTGRES_USER=$POSTGRES_USER \
+-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+-e POSTGRES_DB=$POSTGRES_DB \
 $REPORTING_SERVICE_IMAGE .
 
 docker system prune -f

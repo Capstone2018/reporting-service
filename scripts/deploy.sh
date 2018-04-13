@@ -36,9 +36,9 @@ ensureDroplet () {
 
 deployAPI () {
     docker push aethan/reporting-service
-    docker push aethan/mysqlreports
+    docker push aethan/postgresreports
 
-    dropletName=snopes-reporting-service
+    dropletName=reporting-service
     dropletIP=$(ensureDroplet $dropletName)
     echo >&2 "ensuring that $dropletName server at $dropletIP is provisioned..."
     ssh -oStrictHostKeyChecking=no root@$dropletIP 'bash -s' < provision.sh
