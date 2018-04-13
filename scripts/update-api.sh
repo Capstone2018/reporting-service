@@ -14,16 +14,16 @@ if [ "$(docker ps -aq --filter name=postgres)" ]; then
     docker rm -f postgres
 fi
 
-if [ "$(docker ps -aq --filter name=reporting-service)" ]; then
-    docker rm -f reporting-service
+if [ "$(docker ps -aq --filter name=reporting)" ]; then
+    docker rm -f reporting
 fi
 
 # if [ "$(docker ps -aq --filter name=redis)" ]; then
 #     docker rm -f redis
 # fi
 
-mkdir -p /tls
-openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -subj "/CN=localhost" -keyout /tls/privkey.pem -out /tls/fullchain.pem
+# mkdir -p /tls
+# openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -subj "/CN=localhost" -keyout /tls/privkey.pem -out /tls/fullchain.pem
 
 
 # docker run -d \
@@ -48,7 +48,7 @@ POSTGRES_DB=reporting
 # use $(openssl rand -base64 18) in prod
 POSTGRES_PASSWORD=supersecret 
 
-POSTGRES_HOST=devpsql
+POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 
 # create a postgres database
@@ -64,11 +64,10 @@ $REPORTING_POSTGRES_IMAGE
 docker run -d \
 --name reporting \
 --network $netname \
--p 4040:4040 \
--v $(pwd)/../server/tls:/tls:ro \
--e ADDR=:4040 \
--e TLSKEY=/tls/privkey.pem \
--e TLSCERT=/tls/fullchain.pem \
+-p 443:443 \
+-v /etc/letsencrypt:/etc/letsencrypt:ro \
+-e TLSKEY=/etc/letsencrypt/live/api.snopes.io/privkey.pem \
+-e TLSCERT=/etc/letsencrypt/live/api.snopes.io/fullchain.pem \
 -e POSTGRES_HOST=$POSTGRES_HOST \
 -e POSTGRES_PORT=$POSTGRES_PORT \
 -e POSTGRES_USER=$POSTGRES_USER \

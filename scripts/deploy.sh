@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -e
+source secrets/docker.sh
+domain=snopes.io
 
 #ensureDroplet will ensure that the droplet exists
 #parameters:
@@ -34,14 +36,48 @@ ensureDroplet () {
     echo $dropletIP
 }
 
+#ensureDomainRecord ensures that the correct domain
+#record exists and that it is pointing at the right
+#droplet IP address
+#parameters:
+# 1. domain name
+# 2. record type (e.g., 'A')
+# 3. record name (e.g., '@' or 'api')
+# 4. droplet IP address
+ensureDomainRecord () {
+    #get ID of existing DOM record, if any
+    echo >&2 "checking for existing domain $2 record for name $3 on domain $1..."
+    recID=$(doctl compute domain records list $1 | awk '$2 == "'$2'" && $3 == "'$3'" {print $1}')
+    if [ "$recID" ]; then
+        currentIP=$(doctl compute domain records list $1 | awk '$2 == "'$2'" && $3 == "'$3'" {print $4}')
+        if [ "$currentIP" == "$4" ]; then
+            echo >&2 "$2 record for name $3 on domain $1 is up to date"
+        else
+            echo >&2 "updating $2 record for name $3 on domain $1 to point to IP $4..."
+            doctl compute domain records update $1 \
+            --record-id $recID \
+            --record-type $2 \
+            --record-name $3 \
+            --record-data $4
+        fi
+    else
+        echo >&2 "creating $2 record for name $3 on domain $1 to point to IP $4..."
+        doctl compute domain records create $domain \
+        --record-type $2 \
+        --record-name $3 \
+        --record-data $4
+    fi
+}
+
 deployAPI () {
     docker push aethan/reporting-service
     docker push aethan/postgresreports
 
     dropletName=reporting-service
     dropletIP=$(ensureDroplet $dropletName)
+    ensureDomainRecord $domain 'A' 'api' $dropletIP
     echo >&2 "ensuring that $dropletName server at $dropletIP is provisioned..."
-    ssh -oStrictHostKeyChecking=no root@$dropletIP 'bash -s' < provision.sh
+    ssh -oStrictHostKeyChecking=no root@$dropletIP 'bash -s' < provision.sh "api.$domain"
     echo >&2 "updating docker containers on $dropletName server at $dropletIP..."
     ssh -oStrictHostKeyChecking=no root@$dropletIP 'bash -s' < update-api.sh $DOCKER_USERNAME $DOCKER_PASSWORD
 }
