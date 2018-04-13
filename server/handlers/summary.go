@@ -8,7 +8,7 @@ import (
 )
 
 //SummaryHandler handles requests for the page summary APIandler
-func SummaryHandler(w http.ResponseWriter, r *http.Request) {
+func (ctx *Context) SummaryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	pageURL := r.FormValue("url")
 	if len(pageURL) == 0 {

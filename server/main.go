@@ -66,6 +66,7 @@ func main() {
 
 	apiMux := http.NewServeMux()
 	apiMux.HandleFunc(apiRoot+"reports", hctx.ReportsHandler)
+	apiMux.HandleFunc(apiRoot+"summary", hctx.SummaryHandler)
 	//apiMux.HandleFunc(apiRoot+"reports/", hctx.Authenticated(hctx.ReportIDHandler))
 	serverMux := http.NewServeMux()
 	serverMux.Handle(apiRoot, handlers.Adapt(apiMux,
