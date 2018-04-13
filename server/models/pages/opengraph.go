@@ -4,7 +4,9 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"io"
+	"log"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -117,9 +119,9 @@ func (a AudioSlice) Value() (driver.Value, error) {
 // Article represents opengraph article properties
 type Article struct {
 	Authors        ProfileSlice `json:"authors,omitempty" db:"authors"`
-	PublishedTime  time.Time    `json:"published_time,omitempty" db:"published_time"`
-	ModifiedTime   time.Time    `json:"modified_time,omitempty" db:"modified_time"`
-	ExpirationTime time.Time    `json:"expiration_time,omitempty" db:"expiration_time"`
+	PublishedTime  *time.Time   `json:"published_time,omitempty" db:"published_time"`
+	ModifiedTime   *time.Time   `json:"modified_time,omitempty" db:"modified_time"`
+	ExpirationTime *time.Time   `json:"expiration_time,omitempty" db:"expiration_time"`
 	Section        string       `json:"section,omitempty" db:"section"`
 	Tags           []string     `json:"tags,omitempty" db:"tags"`
 }
@@ -141,6 +143,7 @@ func (a ArticleSlice) Value() (driver.Value, error) {
 
 // Profile contains Open Graph Profile structure
 type Profile struct {
+	Generic   string `json:"generic,omitempty" db:"generic"`
 	FirstName string `json:"first_name,omitempty" db:"first_name"`
 	LastName  string `json:"last_name,omitempty" db:"last_name"`
 	Username  string `json:"username,omitempty" db:"username"`
@@ -165,7 +168,7 @@ func (p ProfileSlice) Value() (driver.Value, error) {
 // Book contains Open Graph Book structure
 type Book struct {
 	ISBN        string       `json:"isbn,omitempty" db:"isbn"`
-	ReleaseDate time.Time    `json:"release_date,omitempty" db:"release_date"`
+	ReleaseDate *time.Time   `json:"release_date,omitempty" db:"release_date"`
 	Tags        []string     `json:"tags,omitempty" db:"tags"`
 	Authors     ProfileSlice `json:"authors,omitempty" db:"authors"`
 }
@@ -462,43 +465,65 @@ func (og *OpenGraph) parseArticle(property, content string) {
 	if og.Article == nil {
 		og.Article = &Article{}
 	}
+	log.Printf("property: %v, content: %v\n", property, content)
 	switch property {
-	case "article:published_time":
+	case "article:published_time", "article:published":
 		if t, err := time.Parse(time.RFC3339, content); err == nil {
-			og.Article.PublishedTime = t
+			og.Article.PublishedTime = &t
 		}
-	case "article:modified_time":
+	case "article:modified_time", "article:modified":
 		if t, err := time.Parse(time.RFC3339, content); err == nil {
-			og.Article.ModifiedTime = t
+			og.Article.ModifiedTime = &t
 		}
-	case "article:expiration_time":
+	case "article:expiration_time", "article:expiration":
 		if t, err := time.Parse(time.RFC3339, content); err == nil {
-			og.Article.ExpirationTime = t
+			og.Article.ExpirationTime = &t
 		}
 	case "article:section":
 		og.Article.Section = content
 	case "article:tag":
 		og.Article.Tags = append(og.Article.Tags, content)
+	case "article:author": //handle generic case where they just provide an author field
+		setProfile(&og.Article.Authors, "Generic", content)
+		//og.Article.Authors[len(og.Article.Authors)-1].Generic = content
 	case "article:author:first_name":
-		appendProfile(&og.Article.Authors)
-		og.Article.Authors[len(og.Article.Authors)-1].FirstName = content
+		setProfile(&og.Article.Authors, "FirstName", content)
+		//og.Article.Authors[len(og.Article.Authors)-1].FirstName = content
 	case "article:author:last_name":
-		appendProfile(&og.Article.Authors)
-		og.Article.Authors[len(og.Article.Authors)-1].LastName = content
+		setProfile(&og.Article.Authors, "LastName", content)
+		//og.Article.Authors[len(og.Article.Authors)-1].LastName = content
 	case "article:author:username":
-		appendProfile(&og.Article.Authors)
-		og.Article.Authors[len(og.Article.Authors)-1].Username = content
+		setProfile(&og.Article.Authors, "Username", content)
+		//og.Article.Authors[len(og.Article.Authors)-1].Username = content
 	case "article:author:gender":
-		appendProfile(&og.Article.Authors)
-		og.Article.Authors[len(og.Article.Authors)-1].Gender = content
+		setProfile(&og.Article.Authors, "Gender", content)
+		//og.Article.Authors[len(og.Article.Authors)-1].Gender = content
 	}
 }
 
+// TODO: consider writing this with 'reflections' package
 // appendProfile appends a profile to a pointer to profile slice if len == 0
-func appendProfile(profiles *ProfileSlice) {
+func setProfile(profiles *ProfileSlice, field, content string) {
+	// add a profile if there isn't one
 	if len(*profiles) == 0 {
 		*profiles = append(*profiles, &Profile{})
 	}
+	// get the last profile
+	profile := (*profiles)[len(*profiles)-1]
+	r := reflect.ValueOf(profile)
+	f := reflect.Indirect(r).FieldByName(field)
+	// if the new profile's 'field' value is different than content
+	// append a new profile
+	if f.String() != content && f.String() != "" {
+		profile = &Profile{}
+		// reset the values of r and f to be of the new profile
+		r = reflect.ValueOf(profile)
+		f = reflect.Indirect(r).FieldByName(field)
+		// append it to the profile slice
+		*profiles = append(*profiles, profile)
+	}
+	// set the profiles value at that field
+	f.SetString(content)
 }
 
 // parse an opengraph book
@@ -511,22 +536,22 @@ func (og *OpenGraph) parseBook(property, content string) {
 		og.Book.ISBN = content
 	case "book:release_date":
 		if t, err := time.Parse(time.RFC3339, content); err == nil {
-			og.Book.ReleaseDate = t
+			og.Book.ReleaseDate = &t
 		}
 	case "book:tag":
 		og.Book.Tags = append(og.Book.Tags, content)
 	case "book:author:first_name":
-		appendProfile(&og.Book.Authors)
-		og.Book.Authors[len(og.Book.Authors)-1].FirstName = content
+		setProfile(&og.Book.Authors, "FirstName", content)
+		//og.Book.Authors[len(og.Book.Authors)-1].FirstName = content
 	case "book:author:last_name":
-		appendProfile(&og.Book.Authors)
-		og.Book.Authors[len(og.Book.Authors)-1].LastName = content
+		setProfile(&og.Book.Authors, "LastName", content)
+		//og.Book.Authors[len(og.Book.Authors)-1].LastName = content
 	case "book:author:username":
-		appendProfile(&og.Book.Authors)
-		og.Book.Authors[len(og.Book.Authors)-1].Username = content
+		setProfile(&og.Book.Authors, "Username", content)
+		//og.Book.Authors[len(og.Book.Authors)-1].Username = content
 	case "book:author:gender":
-		appendProfile(&og.Book.Authors)
-		og.Book.Authors[len(og.Book.Authors)-1].Gender = content
+		setProfile(&og.Book.Authors, "Gender", content)
+		//og.Book.Authors[len(og.Book.Authors)-1].Gender = content
 	}
 }
 
