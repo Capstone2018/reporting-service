@@ -6,6 +6,7 @@ server/server
 
 # ignore dev environment
 scripts/devenv.sh
+scripts/secrets
 # Binaries for programs and plugins
 *.exe
 *.dll
