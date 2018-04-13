@@ -19,7 +19,7 @@ type OpenGraph struct {
 	isBook           bool
 	isProfile        bool
 	CreatedAt        time.Time  `json:"created_at" db:"created_at"`
-	ID               int64      `json:"id" db:"id"`
+	ID               int64      `json:"id,omitempty" db:"id"`
 	Title            string     `json:"title,omitempty" db:"title"`
 	Type             string     `json:"type,omitempty" db:"type"`
 	URL              string     `json:"url,omitempty" db:"url"`
@@ -45,12 +45,12 @@ func (og OpenGraph) Value() (driver.Value, error) {
 
 // Image defines Open Graph Image type
 type Image struct {
-	URL       string `json:"url" db:"url"`
-	SecureURL string `json:"secure_url" db:"secure_url"`
-	Type      string `json:"type" db:"type"`
-	Width     int    `json:"width" db:"width"`
-	Height    int    `json:"height" db:"height"`
-	Alt       string `json:"alt" db:"alt"`
+	URL       string `json:"url,omitempty" db:"url"`
+	SecureURL string `json:"secure_url,omitempty" db:"secure_url"`
+	Type      string `json:"type,omitempty" db:"type"`
+	Width     int    `json:"width,omitempty" db:"width"`
+	Height    int    `json:"height,omitempty" db:"height"`
+	Alt       string `json:"alt,omitempty" db:"alt"`
 }
 
 // Value implements driver Valuer interface
@@ -70,11 +70,11 @@ func (i ImageSlice) Value() (driver.Value, error) {
 
 // Video defines Open Graph Video type
 type Video struct {
-	URL       string `json:"url" db:"url"`
-	SecureURL string `json:"secureUrl" db:"video"`
-	Type      string `json:"type" db:"type"`
-	Width     int    `json:"width" db:"width"`
-	Height    int    `json:"height" db:"height"`
+	URL       string `json:"url,omitempty" db:"url"`
+	SecureURL string `json:"secureUrl,omitempty" db:"video"`
+	Type      string `json:"type,omitempty" db:"type"`
+	Width     int    `json:"width,omitempty" db:"width"`
+	Height    int    `json:"height,omitempty" db:"height"`
 }
 
 // Value implements driver Valuer interface
@@ -94,9 +94,9 @@ func (v VideoSlice) Value() (driver.Value, error) {
 
 // Audio defines Open Graph Audio Type
 type Audio struct {
-	URL       string `json:"url" db:"url"`
-	SecureURL string `json:"secure_url" db:"secure_url"`
-	Type      string `json:"type" db:"type"`
+	URL       string `json:"url,omitempty" db:"url"`
+	SecureURL string `json:"secure_url,omitempty" db:"secure_url"`
+	Type      string `json:"type,omitempty" db:"type"`
 }
 
 // Value implements driver Valuer interface
@@ -116,12 +116,12 @@ func (a AudioSlice) Value() (driver.Value, error) {
 
 // Article represents opengraph article properties
 type Article struct {
-	Authors        ProfileSlice `json:"authors" db:"authors"`
-	PublishedTime  time.Time    `json:"published_time" db:"published_time"`
-	ModifiedTime   time.Time    `json:"modified_time" db:"modified_time"`
-	ExpirationTime time.Time    `json:"expiration_time" db:"expiration_time"`
-	Section        string       `json:"section" db:"section"`
-	Tags           []string     `json:"tags" db:"tags"`
+	Authors        ProfileSlice `json:"authors,omitempty" db:"authors"`
+	PublishedTime  time.Time    `json:"published_time,omitempty" db:"published_time"`
+	ModifiedTime   time.Time    `json:"modified_time,omitempty" db:"modified_time"`
+	ExpirationTime time.Time    `json:"expiration_time,omitempty" db:"expiration_time"`
+	Section        string       `json:"section,omitempty" db:"section"`
+	Tags           []string     `json:"tags,omitempty" db:"tags"`
 }
 
 // Value implements driver Valuer interface
@@ -141,10 +141,10 @@ func (a ArticleSlice) Value() (driver.Value, error) {
 
 // Profile contains Open Graph Profile structure
 type Profile struct {
-	FirstName string `json:"first_name" db:"first_name"`
-	LastName  string `json:"last_name" db:"last_name"`
-	Username  string `json:"username" db:"username"`
-	Gender    string `json:"gender" db:"gender"`
+	FirstName string `json:"first_name,omitempty" db:"first_name"`
+	LastName  string `json:"last_name,omitempty" db:"last_name"`
+	Username  string `json:"username,omitempty" db:"username"`
+	Gender    string `json:"gender,omitempty" db:"gender"`
 }
 
 // Value implements driver Valuer interface
@@ -164,10 +164,10 @@ func (p ProfileSlice) Value() (driver.Value, error) {
 
 // Book contains Open Graph Book structure
 type Book struct {
-	ISBN        string       `json:"isbn" db:"isbn"`
-	ReleaseDate time.Time    `json:"release_date" db:"release_date"`
-	Tags        []string     `json:"tags" db:"tags"`
-	Authors     ProfileSlice `json:"authors" db:"authors"`
+	ISBN        string       `json:"isbn,omitempty" db:"isbn"`
+	ReleaseDate time.Time    `json:"release_date,omitempty" db:"release_date"`
+	Tags        []string     `json:"tags,omitempty" db:"tags"`
+	Authors     ProfileSlice `json:"authors,omitempty" db:"authors"`
 }
 
 // Value implements driver Valuer interface
