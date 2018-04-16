@@ -37,7 +37,6 @@ func (a *Archive) Archive(pageURL string) error {
 		return err
 	}
 	defer resp.Body.Close()
-
 	err = receive(resp, a)
 	return err
 }

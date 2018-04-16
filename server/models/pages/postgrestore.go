@@ -40,7 +40,7 @@ const insertIntoQueryFragment = `with s as (
 	from s`
 const insertIntoOG = `insert into opengraph(
 	created_at, url, title, type, description, determiner, locale, locales_alternate, 
-	images, audios, videos, profile, article, book, blob) 
+	icon, images, audios, videos, profile, article, book, blob) 
 	values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) returning id`
 const insertIntoPage = `insert into pages(
 	created_at, url_id, og_id, report_id, query_fragment_id, wayback, url_string) 
@@ -78,7 +78,7 @@ func (s *PostgreStore) Insert(page *Page) (*Page, error) {
 		page.OpenGraph.Title, page.OpenGraph.Type,
 		page.OpenGraph.Description, page.OpenGraph.Determiner,
 		page.OpenGraph.Locale, pq.Array(page.OpenGraph.LocalesAlternate),
-		page.OpenGraph.Images, page.OpenGraph.Audios,
+		page.OpenGraph.Icon, page.OpenGraph.Images, page.OpenGraph.Audios,
 		page.OpenGraph.Videos, page.OpenGraph.Profile,
 		page.OpenGraph.Article, page.OpenGraph.Book,
 		page.OpenGraph).Scan(&ogID); err != nil {
